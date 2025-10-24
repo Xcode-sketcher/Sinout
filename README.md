@@ -317,13 +317,6 @@ pip install deepface opencv-python tensorflow
 
 ---
 
-## 📚 Documentação Adicional
-
-Para mais detalhes sobre a integração Python + C#, consulte:
-- `PythonDeepFaceApi/README.md` - Guia detalhado de integração
-
----
-
 ## 📄 Licença
 
 Projeto temporariamente sem licença.
