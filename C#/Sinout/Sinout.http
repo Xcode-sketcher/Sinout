@@ -1,0 +1,6 @@
+@Sinout_HostAddress = http://localhost:5236
+
+GET {{Sinout_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

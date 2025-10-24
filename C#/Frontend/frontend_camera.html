@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=7" />
+    <meta
+      name="description"
+      content="Software que realiza o reconhecimento de emoções"
+    />
+    <meta
+      name="keywords"
+      content="FacialAnalysis, ReconhecimentoFacial, Sinout"
+    />
+    <title>Análise Facial com DeepFace</title>
+    <link rel="stylesheet" href="style/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <img
+        src="img/logo.jpeg"
+        alt=""
+        width="300px"
+        style="align-self: center; justify-self: center"
+      />
+      <p class="subtitle">Quando o rosto fala o mundo entende!</p>
+
+      <div id="status" class="status disconnected">
+        ⚠️ Aguardando conexão...
+      </div>
+
+      <div class="settings">
+        <label for="apiUrl">URL da API Python Flask:</label>
+        <select id="apiUrl">
+          <option value="http://localhost:5236">
+            http://localhost:5236 (API C#)
+          </option>
+          <option value="http://localhost:5000">
+            http://localhost:5000 (API Python)
+          </option>
+        </select>
+
+        <label for="modelSelect" style="margin-top: 15px"
+          >Modelo de Reconhecimento:</label
+        >
+        <select id="modelSelect">
+          <option value="Facenet">Facenet (Rápido)</option>
+          <option value="VGG-Face">VGG-Face (Preciso)</option>
+          <option value="Facenet512">Facenet512 (Muito Preciso)</option>
+          <option value="OpenFace">OpenFace (Muito Rápido)</option>
+          <option value="ArcFace">ArcFace (Balanceado)</option>
+        </select>
+      </div>
+
+      <div class="video-container">
+        <div class="video-wrapper">
+          <h3 style="margin-bottom: 10px; color: #4a5568">📹 Câmera</h3>
+          <video id="video" autoplay playsinline></video>
+        </div>
+        <div class="video-wrapper">
+          <h3 style="margin-bottom: 10px; color: #4a5568">📸 Captura</h3>
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="startBtn" class="btn-primary" onclick="startCamera()">
+          📷 Iniciar Câmera
+        </button>
+        <button
+          id="captureBtn"
+          class="btn-success"
+          onclick="captureAndAnalyze()"
+          disabled
+        >
+          🎯 Capturar e Analisar
+        </button>
+        <button id="stopBtn" class="btn-danger" onclick="stopCamera()" disabled>
+          ⏹️ Parar Câmera
+        </button>
+        <button class="btn-secondary" onclick="checkAPIHealth()">
+          🔍 Verificar API
+        </button>
+      </div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Analisando imagem com DeepFace...</p>
+      </div>
+
+      <div id="error" class="error"></div>
+
+      <div id="results" class="results">
+        <div class="result-header">
+          <div class="result-title">📊 Resultados da Análise</div>
+          <div class="emotion-main" id="dominantEmotion"></div>
+        </div>
+
+        <div class="info-section">
+          <div class="info-card">
+            <div class="info-label">Idade Estimada</div>
+            <div class="info-value" id="age">-</div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">Gênero</div>
+            <div class="info-value" id="gender">-</div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">Modelo Usado</div>
+            <div class="info-value" id="model">-</div>
+          </div>
+        </div>
+
+        <h3 style="margin: 25px 0 15px 0; color: #2d3748">
+          Distribuição de Emoções:
+        </h3>
+        <div class="emotions-grid" id="emotionsGrid"></div>
+      </div>
+    </div>
+    <script src="js/script..js"></script>
+  </body>
+</html>
