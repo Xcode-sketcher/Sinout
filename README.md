@@ -86,11 +86,13 @@ projeto/
 ### 1. Configurar API Python
 
 ```bash
-# Navegar para a pasta Python
-cd PythonDeepFaceApi
+# Criar ambiente virtual venv
+python -m venv venv
 
+venv\Scripts\activate
 # Instalar dependências
-pip install flask flask-cors deepface opencv-python tensorflow
+pip install -r requirements.txt
+
 
 # Executar a API
 python api_deepface_flask.py
