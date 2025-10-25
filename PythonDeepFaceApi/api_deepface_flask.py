@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-API Flask para Análise Facial com DeepFace
-Para ser chamada internamente pela sua API C# ASP.NET
 
-Autor: Sistema de IA
-Data: 23/10/2025
-"""
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
