@@ -5,6 +5,12 @@ using System.Text;
 using System.Text.Json;
 using Newtonsoft.Json;
 using Sinout.Model;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.VisualBasic;
+
+
 
 namespace Sinout.Controllers
 {
@@ -14,6 +20,7 @@ namespace Sinout.Controllers
     {
         private readonly HttpClient _httpClient;
         private const string PYTHON_API_URL = "http://localhost:5000"; // API Flask interna
+        private const string MONGO_CONECTION_STRING = "mongodb+srv://eduardobarbosasilvaoficial_db_user:5E7Q2q0F8v6xVWpj@sinout.e6zt4x8.mongodb.net/?appName=Sinout";
 
         public FacialAnalysisController(IHttpClientFactory httpClientFactory)
         {
@@ -57,11 +64,11 @@ namespace Sinout.Controllers
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    return StatusCode((int)response.StatusCode, new 
-                    { 
-                        sucesso = false, 
+                    return StatusCode((int)response.StatusCode, new
+                    {
+                        sucesso = false,
                         erro = "Erro na API Python",
-                        detalhes = errorContent 
+                        detalhes = errorContent
                     });
                 }
 
@@ -72,15 +79,40 @@ namespace Sinout.Controllers
                 // Aqui você pode processar/reformatar os dados antes de retornar
                 // Por exemplo, salvar no banco de dados, adicionar informações extras, etc.
 
+                if (resultado == null)
+                {
+                    return StatusCode(500, new
+                    {
+                        sucesso = false,
+                        erro = "Resposta inválida da API Python"
+                    });
+                }
+
+                var arquivoBson = resultado.ToBsonDocument;
+
+                var connectionString = "mongodb+srv://eduardobarbosasilvaoficial_db_user:5E7Q2q0F8v6xVWpj@sinout.e6zt4x8.mongodb.net/?appName=Sinoutmongodb+srv://eduardobarbosasilvaoficial_db_user:5E7Q2q0F8v6xVWpj@sinout.e6zt4x8.mongodb.net/?appName=Sinout";
+                if (connectionString == null)
+                {
+                    return StatusCode(500, new
+                    {
+                        sucesso = false,
+                        erro = "Variável de ambiente MONGODB_URI não configurada"
+                    });
+                }
+
+                var clientAcess = new MongoClient(connectionString);
+                var collection = clientAcess.GetDatabase("Sinout").GetCollection<BsonDocument>("expressoes");
+                collection.InsertOneAsync(arquivoBson);
+
                 return Ok(resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new 
-                { 
-                    sucesso = false, 
-                    erro = "Erro no servidor C#", 
-                    mensagem = ex.Message 
+                return StatusCode(500, new
+                {
+                    sucesso = false,
+                    erro = "Erro no servidor C#",
+                    mensagem = ex.Message
                 });
             }
         }
@@ -143,9 +175,9 @@ namespace Sinout.Controllers
                 if (response.IsSuccessStatusCode)
                 {
                     var jsonResponse = await response.Content.ReadAsStringAsync();
-                    return Ok(new 
-                    { 
-                        sucesso = true, 
+                    return Ok(new
+                    {
+                        sucesso = true,
                         mensagem = "API Python está online",
                         detalhes = JsonConvert.DeserializeObject<dynamic>(jsonResponse)
                     });
@@ -155,11 +187,11 @@ namespace Sinout.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(503, new 
-                { 
-                    sucesso = false, 
-                    erro = "Não foi possível conectar à API Python", 
-                    mensagem = ex.Message 
+                return StatusCode(503, new
+                {
+                    sucesso = false,
+                    erro = "Não foi possível conectar à API Python",
+                    mensagem = ex.Message
                 });
             }
         }
