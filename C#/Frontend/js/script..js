@@ -81,7 +81,12 @@ async function sendImageToAPI(imageBlob) {
         formData.append("model", model);
         formData.append("actions", "emotion,age,gender");
 
-        const response = await fetch(`${apiUrl}/api/FacialAnalysis/analyze`, {
+
+        const endpoint = apiUrl.includes(':5236')
+            ? '/api/FacialAnalysis/analyze'
+            : '/analyze';
+
+        const response = await fetch(`${apiUrl}${endpoint}`, {
             method: "POST",
             body: formData,
         });

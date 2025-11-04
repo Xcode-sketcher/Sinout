@@ -102,11 +102,13 @@ def analisar_imagem():
             }), 400
 
         # Analisar com DeepFace
+        # Nota: detector_backend usa opencv, ssd, dlib, mtcnn, etc (não Facenet)
+        # O parâmetro modelo seria para reconhecimento facial, não detecção
         resultado = DeepFace.analyze(
             img,
             actions=actions,
             enforce_detection=False,
-            detector_backend=modelo,
+            detector_backend='opencv',  # Usar detector padrão (opencv, ssd, mtcnn, etc)
             silent=True
         )
 
@@ -183,11 +185,12 @@ def analisar_base64():
         actions = data.get('actions', ['emotion', 'age', 'gender'])
 
         # Analisar com DeepFace
+        # Nota: detector_backend usa opencv, ssd, dlib, mtcnn, etc (não Facenet)
         resultado = DeepFace.analyze(
             img,
             actions=actions,
             enforce_detection=False,
-            detector_backend=modelo,
+            detector_backend='opencv',  # Usar detector padrão
             silent=True
         )
 

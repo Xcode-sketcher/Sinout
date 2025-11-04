@@ -19,8 +19,8 @@ namespace Sinout.Controllers
     public class FacialAnalysisController : ControllerBase
     {
         private readonly HttpClient _httpClient;
-        private const string PYTHON_API_URL = "http://localhost:5000"; // API Flask interna
-        private const string MONGO_CONECTION_STRING = "mongodb+srv://eduardobarbosasilvaoficial_db_user:5E7Q2q0F8v6xVWpj@sinout.e6zt4x8.mongodb.net/?appName=Sinout";
+        private const string PYTHON_API_URL = "http://localhost:5000";
+        private const string MONGO_CONECTION_STRING = "mongodb+srv://eduardobarbosasilvaoficial_db_user:thk8XbbxiaZs5tu9@sinout.e8dswtn.mongodb.net/?appName=Sinout";
 
         public FacialAnalysisController(IHttpClientFactory httpClientFactory)
         {
@@ -76,9 +76,6 @@ namespace Sinout.Controllers
                 var jsonResponse = await response.Content.ReadAsStringAsync();
                 var resultado = JsonConvert.DeserializeObject<dynamic>(jsonResponse);
 
-                // Aqui você pode processar/reformatar os dados antes de retornar
-                // Por exemplo, salvar no banco de dados, adicionar informações extras, etc.
-
                 if (resultado == null)
                 {
                     return StatusCode(500, new
@@ -88,21 +85,48 @@ namespace Sinout.Controllers
                     });
                 }
 
-                var arquivoBson = resultado.ToBsonDocument;
-
-                var connectionString = "mongodb+srv://eduardobarbosasilvaoficial_db_user:5E7Q2q0F8v6xVWpj@sinout.e6zt4x8.mongodb.net/?appName=Sinoutmongodb+srv://eduardobarbosasilvaoficial_db_user:5E7Q2q0F8v6xVWpj@sinout.e6zt4x8.mongodb.net/?appName=Sinout";
-                if (connectionString == null)
+                // Salvar no MongoDB
+                try
                 {
+                    var connectionString = MONGO_CONECTION_STRING;
+                    var clientAcess = new MongoClient(connectionString);
+                    var database = clientAcess.GetDatabase("Sinout");
+                    var collection = database.GetCollection<BsonDocument>("expressoes");
+
+                    // Criar documento estruturado para o MongoDB
+                    var documento = new BsonDocument
+                    {
+                        { "timestamp", DateTime.UtcNow },
+                        { "modelo_usado", resultado.modelo_usado?.ToString() ?? "Facenet" },
+                        { "sucesso", resultado.sucesso?.ToString() == "True" },
+                        { "analise", new BsonDocument
+                            {
+                                { "emocao_dominante", resultado.analise?.emocao_dominante?.ToString() ?? "" },
+                                { "emocoes", BsonDocument.Parse(resultado.analise?.emocoes?.ToString() ?? "{}") },
+                                { "idade", resultado.analise?.idade?.ToString() ?? "0" },
+                                { "genero", resultado.analise?.genero?.ToString() ?? "" },
+                                { "raca_dominante", resultado.analise?.raca_dominante?.ToString() ?? "" }
+                            }
+                        },
+                        { "dados_completos", BsonDocument.Parse(JsonConvert.SerializeObject(resultado.dados_completos)) }
+                    };
+
+                    // Inserir no MongoDB (aguardando a operação)
+                    await collection.InsertOneAsync(documento);
+                    
+                    Console.WriteLine("💾 Dados salvos no MongoDB com sucesso!");
+                }
+                catch (Exception mongoEx)
+                {
+                    // Retornar erro ao usuário
                     return StatusCode(500, new
                     {
                         sucesso = false,
-                        erro = "Variável de ambiente MONGODB_URI não configurada"
+                        erro = "Erro ao salvar no MongoDB",
+                        detalhes = mongoEx.Message,
+                        dados_recebidos = resultado
                     });
                 }
-
-                var clientAcess = new MongoClient(connectionString);
-                var collection = clientAcess.GetDatabase("Sinout").GetCollection<BsonDocument>("expressoes");
-                collection.InsertOneAsync(arquivoBson);
 
                 return Ok(resultado);
             }
