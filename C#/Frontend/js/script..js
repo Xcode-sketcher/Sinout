@@ -5,19 +5,28 @@ const ctx = canvas.getContext("2d");
 
 // Inicializar câmera
 async function startCamera() {
+    console.log("[DEBUG] Iniciando câmera...");
+
     try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        const constraints = {
             video: {
                 width: { ideal: 640 },
                 height: { ideal: 480 },
             },
-        });
+        };
+
+        console.log("[DEBUG] Solicitando acesso à câmera com constraints:", constraints);
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("[DEBUG] Stream obtido com sucesso");
 
         video.srcObject = stream;
 
         video.onloadedmetadata = () => {
+            console.log("[DEBUG] Video metadata loaded:", video.videoWidth, "x", video.videoHeight);
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            console.log("[DEBUG] Canvas configurado:", canvas.width, "x", canvas.height);
         };
 
         document.getElementById("startBtn").disabled = true;
@@ -26,6 +35,7 @@ async function startCamera() {
 
         showStatus("Câmera ativada!", "connected");
     } catch (error) {
+        console.error("[DEBUG] Erro ao acessar câmera:", error);
         showError("Erro ao acessar câmera: " + error.message);
     }
 }
@@ -47,16 +57,30 @@ function stopCamera() {
 
 // Capturar frame e enviar para análise
 async function captureAndAnalyze() {
+    console.log("[DEBUG] Iniciando captura e análise...");
+
+    // Verificar se canvas tem dimensões válidas
+    if (canvas.width === 0 || canvas.height === 0) {
+        console.error("[DEBUG] Canvas não tem dimensões válidas:", canvas.width, canvas.height);
+        showError("Erro: câmera não foi inicializada corretamente");
+        return;
+    }
+
     // Desenhar frame atual no canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    console.log("[DEBUG] Frame desenhado no canvas:", canvas.width, "x", canvas.height);
 
     // Converter canvas para blob
     canvas.toBlob(
         async (blob) => {
             if (!blob) {
+                console.error("[DEBUG] Falha ao converter canvas para blob");
                 showError("Erro ao capturar imagem");
                 return;
             }
+
+            console.log("[DEBUG] Blob criado com tamanho:", blob.size, "bytes");
+            console.log("[DEBUG] Tipo do blob:", blob.type);
 
             // Enviar para API
             await sendImageToAPI(blob);
@@ -71,6 +95,9 @@ async function sendImageToAPI(imageBlob) {
     const apiUrl = document.getElementById("apiUrl").value;
     const model = document.getElementById("modelSelect").value;
 
+    console.log("[DEBUG] Enviando para API:", apiUrl);
+    console.log("[DEBUG] Modelo selecionado:", model);
+
     showLoading(true);
     hideError();
     hideResults();
@@ -81,21 +108,46 @@ async function sendImageToAPI(imageBlob) {
         formData.append("model", model);
         formData.append("actions", "emotion,age,gender");
 
-
         const endpoint = apiUrl.includes(':5236')
             ? '/api/FacialAnalysis/analyze'
             : '/analyze';
 
+        console.log("[DEBUG] Endpoint usado:", endpoint);
+
+        // Obter token JWT do localStorage
+        const token = localStorage.getItem("token");
+        console.log("[DEBUG] Token encontrado:", token ? "Sim" : "Não");
+
+        if (!token) {
+            throw new Error("Token de autenticação não encontrado. Faça login novamente.");
+        }
+
+        const headers = {};
+        if (apiUrl.includes(':5236')) {
+            // API C# requer Bearer token
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log("[DEBUG] Header Authorization adicionado");
+        }
+
+        console.log("[DEBUG] Fazendo requisição para:", `${apiUrl}${endpoint}`);
+
         const response = await fetch(`${apiUrl}${endpoint}`, {
             method: "POST",
             body: formData,
+            headers: headers
         });
 
+        console.log("[DEBUG] Status da resposta:", response.status);
+        console.log("[DEBUG] Headers da resposta:", [...response.headers.entries()]);
+
         if (!response.ok) {
-            throw new Error(`Erro HTTP: ${response.status}`);
+            const errorText = await response.text();
+            console.error("[DEBUG] Erro na resposta:", errorText);
+            throw new Error(`Erro HTTP: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
+        console.log("[DEBUG] Dados recebidos:", data);
 
         if (data.sucesso) {
             displayResults(data);
@@ -103,6 +155,7 @@ async function sendImageToAPI(imageBlob) {
             showError("Erro na análise: " + data.erro);
         }
     } catch (error) {
+        console.error("[DEBUG] Erro completo:", error);
         showError("Erro ao conectar com API: " + error.message);
     } finally {
         showLoading(false);
@@ -111,25 +164,33 @@ async function sendImageToAPI(imageBlob) {
 
 // Exibir resultados do reconhecimento facial
 function displayResults(data) {
-    const analise = data.analise;
+    console.log("[DEBUG] Exibindo resultados:", data);
+
+    // Ajustar para a estrutura da API C#
+    const analise = data.analise || data;
+    console.log("[DEBUG] Estrutura analise:", analise);
 
     // Emoção dominante
-    document.getElementById("dominantEmotion").textContent =
-        translateEmotion(analise.emocao_dominante);
+    const emocaoDominante = analise.emocao_dominante || analise.emocao || data.emocao || "";
+    document.getElementById("dominantEmotion").textContent = translateEmotion(emocaoDominante);
+    console.log("[DEBUG] Emoção dominante:", emocaoDominante);
 
     // Idade e gênero (Remover no futuro, afinal o usuário não quer a estimativa de sua idade sendo exibida sempre)
-    document.getElementById("age").textContent =
-        Math.round(analise.idade) + " anos";
-    document.getElementById("gender").textContent =
-        analise.genero === "Man" ? "Masculino" : "Feminino";
-    document.getElementById("model").textContent = data.modelo_usado;
+    const idade = analise.idade || data.idade || "";
+    const genero = analise.genero || data.genero || "";
+
+    document.getElementById("age").textContent = idade ? Math.round(idade) + " anos" : "-";
+    document.getElementById("gender").textContent = genero === "Man" ? "Masculino" : genero === "Woman" ? "Feminino" : genero || "-";
+    document.getElementById("model").textContent = data.modelo_usado || "Desconhecido";
 
     // Grid de emoções
     const emotionsGrid = document.getElementById("emotionsGrid");
     emotionsGrid.innerHTML = "";
 
-    const emotions = analise.emocoes;
-    const sortedEmotions = Object.entries(emotions).sort(
+    const emocoes = analise.emocoes || analise.emotions || data.emocoes || {};
+    console.log("[DEBUG] Emoções recebidas:", emocoes);
+
+    const sortedEmotions = Object.entries(emocoes).sort(
         (a, b) => b[1] - a[1]
     );
 
@@ -148,6 +209,7 @@ function displayResults(data) {
     });
 
     document.getElementById("results").classList.add("show");
+    console.log("[DEBUG] Resultados exibidos com sucesso");
 }
 
 // Recebe as emoções capturadas(JSON) e transforma em palavas a serem exibidas
@@ -167,13 +229,23 @@ function translateEmotion(emotion) {
 // Verificar disponibilidade de API (Terá utilidade após o deploy)
 async function checkAPIHealth() {
     const apiUrl = document.getElementById("apiUrl").value;
+    console.log("[DEBUG] Verificando saúde da API:", apiUrl);
 
     try {
-        const response = await fetch(`${apiUrl}/health`);
-        const data = await response.json();
+        const endpoint = apiUrl.includes(':5236')
+            ? '/api/FacialAnalysis/health'
+            : '/health';
 
-        if (data.status === "healthy") {
-            showStatus("✅ API Flask está online e funcionando!", "connected");
+        console.log("[DEBUG] Endpoint de saúde:", endpoint);
+
+        const response = await fetch(`${apiUrl}${endpoint}`);
+        console.log("[DEBUG] Status da resposta de saúde:", response.status);
+
+        const data = await response.json();
+        console.log("[DEBUG] Dados da resposta de saúde:", data);
+
+        if (data.sucesso || data.status === "healthy") {
+            showStatus("✅ API está online e funcionando!", "connected");
         } else {
             showStatus(
                 "⚠️ API respondeu mas pode ter problemas",
@@ -181,12 +253,13 @@ async function checkAPIHealth() {
             );
         }
     } catch (error) {
+        console.error("[DEBUG] Erro ao verificar saúde da API:", error);
         showStatus(
-            "❌ Não foi possível conectar à API Flask",
+            "❌ Não foi possível conectar à API",
             "disconnected"
         );
         showError(
-            "Certifique-se de que a API está rodando: python api_deepface_flask.py"
+            "Certifique-se de que a API está rodando"
         );
     }
 }

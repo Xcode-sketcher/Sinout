@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sinout - Regras de Emoções</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: var(--bg-secondary);
+      }
+
+      .rules {
+        padding: 32px 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .rules-header {
+        margin-bottom: 32px;
+      }
+
+      .rules-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .rules-subtitle {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      /* Main Grid */
+      .rules-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+
+      /* Add Rule Card */
+      .add-rule-card {
+        background: white;
+        border: 1px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 24px;
+      }
+
+      /* Intensity Selector */
+      .intensity-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .intensity-option {
+        padding: 20px;
+        border: 2px solid var(--border-primary);
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        transition: all var(--transition-base);
+        text-align: center;
+      }
+
+      .intensity-option:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+      }
+
+      .intensity-option.selected {
+        border-color: var(--primary);
+        background: rgba(139, 92, 246, 0.05);
+        box-shadow: var(--shadow-md);
+      }
+
+      .intensity-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .intensity-desc {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+
+      /* Form */
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+
+      /* Rules List */
+      .rules-list-card {
+        background: white;
+        border: 1px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: var(--shadow-sm);
+        max-height: 600px;
+        overflow-y: auto;
+      }
+
+      .rule-item {
+        padding: 16px;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        border: 1px solid var(--border-secondary);
+        transition: all var(--transition-base);
+      }
+
+      .rule-item:hover {
+        border-color: var(--border-primary);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .rule-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .rule-emotion {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .rule-badge {
+        display: inline-flex;
+        padding: 4px 12px;
+        background: rgba(139, 92, 246, 0.1);
+        color: var(--primary);
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .rule-details {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .rule-message {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        padding: 8px 12px;
+        background: white;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+
+      .rule-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      /* Empty State */
+      .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--text-tertiary);
+      }
+
+      .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+
+      .empty-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .empty-description {
+        font-size: 14px;
+        color: var(--text-secondary);
+      }
+
+      /* Responsive */
+      @media (max-width: 1024px) {
+        .rules-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .rules {
+          padding: 16px;
+        }
+
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+
+        .intensity-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+          flex-direction: column;
+        }
+
+        .form-actions .btn {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="index.html" class="navbar-logo">
+          <div class="navbar-logo-icon">S</div>
+          <span>Sinout</span>
+        </a>
+        <ul class="navbar-menu">
+          <li><a href="index.html" class="navbar-link">Início</a></li>
+          <li><a href="dashboard.html" class="navbar-link">Dashboard</a></li>
+          <li><a href="history.html" class="navbar-link">Histórico</a></li>
+          <li><a href="rules.html" class="navbar-link active">Regras</a></li>
+          <li><a href="#" class="navbar-link" id="logoutBtn">Sair</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Rules Content -->
+    <main class="rules">
+      <div class="rules-header">
+        <h1 class="rules-title">Regras de Emoções</h1>
+        <p class="rules-subtitle">
+          Configure alertas personalizados para emoções específicas com
+          intensidades diferentes
+        </p>
+      </div>
+
+      <div class="rules-grid">
+        <!-- Add Rule Form -->
+        <div class="add-rule-card">
+          <h2 class="card-title">Criar Nova Regra</h2>
+
+          <form id="ruleForm">
+            <div class="form-group">
+              <label class="form-label">Emoção</label>
+              <select class="form-select" id="emotionSelect" required>
+                <option value="">Selecione uma emoção</option>
+                <option value="happy">Feliz</option>
+                <option value="sad">Triste</option>
+                <option value="angry">Raiva</option>
+                <option value="surprise">Surpreso</option>
+                <option value="fear">Medo</option>
+                <option value="disgust">Desgosto</option>
+                <option value="neutral">Neutro</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Intensidade</label>
+              <div class="intensity-grid">
+                <div class="intensity-option" data-intensity="superior">
+                  <div class="intensity-label">Superior</div>
+                  <div class="intensity-desc">> 50-100%</div>
+                </div>
+                <div class="intensity-option" data-intensity="inferior">
+                  <div class="intensity-label">Inferior</div>
+                  <div class="intensity-desc">≤ 0-50%</div>
+                </div>
+              </div>
+              <input type="hidden" id="intensityInput" required />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Percentual Mínimo</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  id="minPercentageInput"
+                  min="0"
+                  max="100"
+                  value="50"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Prioridade</label>
+                <input
+                  type="number"
+                  class="form-input"
+                  id="priorityInput"
+                  min="1"
+                  max="10"
+                  value="1"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Mensagem de Alerta</label>
+              <textarea
+                class="form-textarea"
+                id="messageInput"
+                placeholder="Digite a mensagem que será exibida quando esta emoção for detectada"
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" id="clearBtn">
+                Limpar
+              </button>
+              <button type="submit" class="btn btn-primary">Criar Regra</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Rules List -->
+        <div class="rules-list-card">
+          <h2 class="card-title">Minhas Regras</h2>
+          <div id="rulesList">
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <p class="empty-title">Nenhuma regra criada</p>
+              <p class="empty-description">Crie sua primeira regra de emoção</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const API_URL = "http://localhost:5240/api";
+      let selectedIntensity = null;
+
+      // Check authentication
+      function checkAuth() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          window.location.href = "login.html";
+          return false;
+        }
+        return true;
+      }
+
+      // Intensity selection
+      document.querySelectorAll(".intensity-option").forEach((option) => {
+        option.addEventListener("click", function () {
+          document
+            .querySelectorAll(".intensity-option")
+            .forEach((opt) => opt.classList.remove("selected"));
+          this.classList.add("selected");
+          selectedIntensity = this.dataset.intensity;
+          document.getElementById("intensityInput").value = selectedIntensity;
+        });
+      });
+
+      // Load rules
+      async function loadRules() {
+        if (!checkAuth()) return;
+
+        const token = localStorage.getItem("token");
+
+        try {
+          console.log(
+            "Loading rules from:",
+            `${API_URL}/emotion-mappings/my-rules`
+          );
+          const response = await fetch(`${API_URL}/emotion-mappings/my-rules`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          console.log("Response status:", response.status);
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Error response:", errorText);
+            throw new Error("Failed to load rules");
+          }
+
+          const rules = await response.json();
+          console.log("Rules received:", rules);
+          displayRules(rules);
+        } catch (error) {
+          console.error("Error loading rules:", error);
+          document.getElementById("rulesList").innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚠️</div>
+            <p class="empty-title">Erro ao carregar regras</p>
+            <p class="empty-description">Verifique o console para mais detalhes</p>
+          </div>
+        `;
+        }
+      }
+
+      function displayRules(rules) {
+        const container = document.getElementById("rulesList");
+
+        if (!rules || rules.length === 0) {
+          container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p class="empty-title">Nenhuma regra criada</p>
+            <p class="empty-description">Crie sua primeira regra de emoção</p>
+          </div>
+        `;
+          return;
+        }
+
+        container.innerHTML = rules
+          .map(
+            (rule) => `
+        <div class="rule-item">
+          <div class="rule-header">
+            <span class="rule-emotion">${translateEmotion(rule.emotion)}</span>
+            <span class="rule-badge">${rule.intensityLevel}</span>
+          </div>
+
+          <div class="rule-details">
+            <span>📊 Min: ${rule.minPercentage}%</span>
+            <span>⭐ Prioridade: ${rule.priority}</span>
+          </div>
+
+          <div class="rule-message">
+            ${rule.message}
+          </div>
+
+          <div class="rule-actions">
+            <button class="btn btn-sm btn-ghost" onclick="deleteRule('${
+              rule.id
+            }')">Excluir</button>
+          </div>
+        </div>
+      `
+          )
+          .join("");
+      }
+
+      // Create rule
+      document
+        .getElementById("ruleForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          if (!selectedIntensity) {
+            alert("Por favor, selecione uma intensidade");
+            return;
+          }
+
+          const token = localStorage.getItem("token");
+          const ruleData = {
+            emotion: document.getElementById("emotionSelect").value,
+            intensityLevel: selectedIntensity,
+            minPercentage: parseFloat(
+              document.getElementById("minPercentageInput").value
+            ),
+            priority: parseInt(document.getElementById("priorityInput").value),
+            message: document.getElementById("messageInput").value,
+          };
+
+          try {
+            const response = await fetch(`${API_URL}/emotion-mappings`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(ruleData),
+            });
+
+            if (!response.ok) throw new Error("Failed to create rule");
+
+            alert("Regra criada com sucesso!");
+            document.getElementById("ruleForm").reset();
+            document
+              .querySelectorAll(".intensity-option")
+              .forEach((opt) => opt.classList.remove("selected"));
+            selectedIntensity = null;
+            loadRules();
+          } catch (error) {
+            console.error("Error creating rule:", error);
+            alert("Erro ao criar regra. Tente novamente.");
+          }
+        });
+
+      // Delete rule
+      async function deleteRule(id) {
+        if (!confirm("Deseja realmente excluir esta regra?")) return;
+
+        const token = localStorage.getItem("token");
+
+        try {
+          const response = await fetch(`${API_URL}/emotion-mappings/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!response.ok) throw new Error("Failed to delete rule");
+
+          alert("Regra excluída com sucesso!");
+          loadRules();
+        } catch (error) {
+          console.error("Error deleting rule:", error);
+          alert("Erro ao excluir regra. Tente novamente.");
+        }
+      }
+
+      // Clear form
+      document.getElementById("clearBtn").addEventListener("click", () => {
+        document.getElementById("ruleForm").reset();
+        document
+          .querySelectorAll(".intensity-option")
+          .forEach((opt) => opt.classList.remove("selected"));
+        selectedIntensity = null;
+      });
+
+      function translateEmotion(emotion) {
+        const translations = {
+          happy: "Feliz",
+          sad: "Triste",
+          angry: "Raiva",
+          surprise: "Surpreso",
+          fear: "Medo",
+          disgust: "Desgosto",
+          neutral: "Neutro",
+        };
+        return translations[emotion] || emotion;
+      }
+
+      // Logout
+      document.getElementById("logoutBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      });
+
+      // Initialize
+      checkAuth();
+      loadRules();
+    </script>
+  </body>
+</html>
