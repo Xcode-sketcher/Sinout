@@ -54,11 +54,6 @@ namespace Sinout.Controllers
                 pythonRequest.Content = content;
                 pythonRequest.Headers.Add("X-API-Key", _pythonApiKey);
 
-                // Log detalhado para debug
-                Console.WriteLine($"[DEBUG] 🔑 Enviando para Python API: {_pythonApiUrl}/analyze");
-                Console.WriteLine($"[DEBUG] 🔑 API Key (primeiros 20 chars): {(_pythonApiKey?.Length > 20 ? _pythonApiKey.Substring(0, 20) + "..." : _pythonApiKey ?? "NULL")}");
-                Console.WriteLine($"[DEBUG] 🔑 API Key length: {_pythonApiKey?.Length ?? 0}");
-
                 var response = await _httpClient.SendAsync(pythonRequest);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -76,7 +71,6 @@ namespace Sinout.Controllers
                 var idade = resultado?.analise?.idade?.ToString();
                 var genero = resultado?.analise?.genero?.ToString();
 
-                // Retornar apenas os resultados da análise - o frontend salvará no banco
                 return Ok(new 
                 { 
                     sucesso = true, 
@@ -152,11 +146,11 @@ namespace Sinout.Controllers
                 var idade = resultado?.analise?.idade?.ToString();
                 var genero = resultado?.analise?.genero?.ToString();
 
-                // Buscar nome do paciente do perfil do usuário (email do JWT)
+                
                 var emailClaim = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
                 string patientName = emailClaim ?? "Paciente"; // Use email do JWT como identificador
 
-                // Salvar histórico vinculado ao cuidador (sem PatientId)
+                
                 var emotionData = new
                 {
                     CuidadorId = userId,
@@ -205,24 +199,24 @@ namespace Sinout.Controllers
 
         private int GetCurrentUserId()
         {
-            // Debug: log all claims
+            
             var allClaims = User.Claims.Select(c => $"{c.Type}: {c.Value}").ToList();
-            Console.WriteLine("Available claims: " + string.Join(", ", allClaims));
+           
             
             var userIdClaim = User.FindFirst("userId");
             if (userIdClaim == null)
             {
-                // Fallback para outros claims
+                
                 userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("nameid") ?? User.FindFirst("sub");
                 if (userIdClaim == null)
-                    throw new UnauthorizedAccessException("Token JWT inválido - nenhum claim de ID encontrado. Claims disponíveis: " + string.Join(", ", allClaims));
+                    throw new UnauthorizedAccessException("Token JWT inválido");
             }
             
             if (string.IsNullOrWhiteSpace(userIdClaim.Value))
-                throw new UnauthorizedAccessException("Token JWT inválido - claim de ID está vazio");
+                throw new UnauthorizedAccessException("Token JWT inválido");
             
             if (!int.TryParse(userIdClaim.Value, out int userId))
-                throw new UnauthorizedAccessException($"Token JWT inválido - claim '{userIdClaim.Type}' com valor '{userIdClaim.Value}' não é um número válido");
+                throw new UnauthorizedAccessException($"Token JWT inválido");
             
             return userId;
         }

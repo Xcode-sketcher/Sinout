@@ -36,7 +36,6 @@
         color: var(--text-secondary);
       }
 
-      /* Main Grid Layout */
       .dashboard-grid {
         display: grid;
         grid-template-columns: 1fr 340px;
@@ -44,7 +43,6 @@
         margin-bottom: 24px;
       }
 
-      /* Camera Container - Modern Glass */
       .camera-card {
         background: white;
         border: 1px solid var(--border-primary);
@@ -215,7 +213,6 @@
         box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
       }
 
-      /* Model Selector - Same style as interval selector */
       .model-selector-container {
         margin-top: 12px;
         padding-top: 12px;
@@ -271,7 +268,6 @@
         margin-top: 8px;
       }
 
-      /* Results Sidebar */
       .results-card {
         background: white;
         border: 1px solid var(--border-primary);
@@ -356,7 +352,6 @@
         margin-top: 8px;
       }
 
-      /* User Info Card */
       .user-card {
         background: white;
         border: 1px solid var(--border-primary);
@@ -422,7 +417,6 @@
         color: var(--text-secondary);
       }
 
-      /* Empty State */
       .empty-state {
         text-align: center;
         padding: 48px 24px;
@@ -435,7 +429,6 @@
         opacity: 0.5;
       }
 
-      /* Responsive */
       @media (max-width: 1024px) {
         .dashboard-grid {
           grid-template-columns: 1fr;
@@ -457,7 +450,6 @@
       }
     </style>
     <style>
-      /* Rule Message */
       .rule-message-container {
         margin-bottom: 20px;
       }
@@ -502,7 +494,6 @@
   </head>
 
   <body>
-    <!-- Navigation -->
     <nav class="navbar">
       <div class="navbar-container">
         <a href="index.html" class="navbar-logo">
@@ -521,7 +512,6 @@
       </div>
     </nav>
 
-    <!-- Dashboard Content -->
     <main class="dashboard">
       <div class="dashboard-header">
         <h1 class="dashboard-title">Dashboard</h1>
@@ -530,9 +520,7 @@
         </p>
       </div>
 
-      <!-- Main Grid -->
       <div class="dashboard-grid">
-        <!-- Camera Section -->
         <div class="camera-card">
           <div class="camera-header">
             <h2 class="camera-title">Câmera</h2>
@@ -561,7 +549,6 @@
             </button>
           </div>
 
-          <!-- Auto Capture Toggle -->
           <div class="auto-capture-toggle">
             <div class="toggle-container">
               <span class="toggle-label">Captura Automática</span>
@@ -580,7 +567,6 @@
               </select>
             </div>
 
-            <!-- Model Selector -->
             <div class="model-selector-container">
               <div class="model-selector">
                 <label for="modelSelect">Modelo IA:</label>
@@ -602,14 +588,12 @@
           </div>
         </div>
 
-        <!-- Results Sidebar -->
         <div class="results-card">
           <div class="results-header">
             <h2 class="results-title">Resultados</h2>
             <p class="results-subtitle">Últimas emoções detectadas</p>
           </div>
 
-          <!-- Campo para mensagem da regra -->
           <div
             id="ruleMessageContainer"
             class="rule-message-container"
@@ -633,7 +617,6 @@
         </div>
       </div>
 
-      <!-- User Info -->
       <div class="user-card">
         <div class="user-header">
           <div class="user-avatar">U</div>
@@ -665,7 +648,6 @@
       let analysisInterval = null;
       let autoCaptureEnabled = false;
 
-      // Get selected interval in milliseconds
       function getIntervalMs() {
         const seconds = parseInt(
           document.getElementById("intervalSelect").value
@@ -673,7 +655,6 @@
         return seconds * 1000;
       }
 
-      // Auto capture toggle
       document
         .getElementById("autoCaptureToggle")
         .addEventListener("click", function () {
@@ -689,12 +670,10 @@
           }
         });
 
-      // Update interval when changed
       document
         .getElementById("intervalSelect")
         .addEventListener("change", function () {
           if (autoCaptureEnabled && stream) {
-            // Restart interval with new duration
             if (analysisInterval) {
               clearInterval(analysisInterval);
             }
@@ -703,7 +682,6 @@
           }
         });
 
-      // Load user data
       async function loadUserData() {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -720,7 +698,6 @@
 
           const user = await response.json();
 
-          // Salvar nome do paciente para uso posterior
           if (user.patientName) {
             localStorage.setItem("patientName", user.patientName);
           }
@@ -738,7 +715,6 @@
         }
       }
 
-      // Load available models
       async function loadModels() {
         try {
           const token = localStorage.getItem("token");
@@ -755,7 +731,7 @@
             const data = await response.json();
             const select = document.getElementById("modelSelect");
             if (select && data.modelos_disponiveis) {
-              select.innerHTML = ""; // Clear existing
+              select.innerHTML = "";
               data.modelos_disponiveis.forEach((model) => {
                 const option = document.createElement("option");
                 option.value = model.nome;
@@ -770,12 +746,10 @@
         }
       }
 
-      // Camera functions
       document
         .getElementById("startCameraBtn")
         .addEventListener("click", async () => {
           try {
-            // Verificar se já há uma stream ativa
             if (stream) {
               stream.getTracks().forEach((track) => track.stop());
             }
@@ -791,7 +765,6 @@
             const video = document.getElementById("videoElement");
             video.srcObject = stream;
 
-            // Aguardar o vídeo carregar e reproduzir
             await new Promise((resolve) => {
               video.onloadedmetadata = () => {
                 video
@@ -807,7 +780,6 @@
             document.getElementById("captureFaceBtn").disabled = false;
             document.getElementById("stopCameraBtn").disabled = false;
 
-            // Start auto-capture if enabled
             if (autoCaptureEnabled) {
               const interval = getIntervalMs();
               analysisInterval = setInterval(captureAndAnalyze, interval);
@@ -843,7 +815,6 @@
           return;
         }
 
-        // Verificar se há um stream ativo
         if (!stream || !stream.active) {
           alert("Câmera não está ativa. Clique em 'Iniciar Câmera' primeiro.");
           return;
@@ -870,7 +841,6 @@
             const formData = new FormData();
             formData.append("file", blob, "capture.jpg");
 
-            // Get selected model
             const modelSelect = document.getElementById("modelSelect");
             const selectedModel = modelSelect ? modelSelect.value : "Facenet";
             formData.append("model", selectedModel);
@@ -884,7 +854,6 @@
                 return;
               }
 
-              // Mostrar indicador de carregamento
               const captureBtn = document.getElementById("captureFaceBtn");
               const originalText = captureBtn.textContent;
               captureBtn.textContent = "Analisando...";
@@ -910,13 +879,11 @@
               displayResults(data);
               saveToHistory(data);
 
-              // Restaurar botão
               captureBtn.textContent = originalText;
               captureBtn.disabled = false;
             } catch (error) {
               alert("Erro ao analisar: " + error.message);
 
-              // Restaurar botão em caso de erro
               const captureBtn = document.getElementById("captureFaceBtn");
               captureBtn.textContent = "Capturar";
               captureBtn.disabled = false;
@@ -927,13 +894,10 @@
         );
       }
 
-      // Função para mostrar alertas
       function showAlert(message, type = "info") {
-        // Remover alertas existentes
         const existingAlerts = document.querySelectorAll(".alert-message");
         existingAlerts.forEach((alert) => alert.remove());
 
-        // Criar novo alerta
         const alertDiv = document.createElement("div");
         alertDiv.className = `alert-message alert-${type}`;
         alertDiv.innerHTML = `
@@ -944,7 +908,6 @@
           </div>
         `;
 
-        // Adicionar estilos inline se não existirem
         if (!document.querySelector(".alert-styles")) {
           const styles = document.createElement("style");
           styles.className = "alert-styles";
@@ -993,7 +956,6 @@
 
         document.body.appendChild(alertDiv);
 
-        // Auto-remover após 5 segundos
         setTimeout(() => {
           if (alertDiv.parentElement) {
             alertDiv.remove();
@@ -1004,7 +966,6 @@
       function displayResults(data) {
         const container = document.getElementById("resultsContainer");
 
-        // Verificar se há mensagem de alerta da regra
         const suggestedMessage =
           data.mensagem || data.mensagem_sugerida || data.suggestedMessage;
         const ruleMessageContainer = document.getElementById(
@@ -1013,11 +974,9 @@
         const ruleMessageText = document.getElementById("ruleMessageText");
 
         if (suggestedMessage) {
-          // Mostrar mensagem da regra no campo dedicado
           ruleMessageText.textContent = suggestedMessage;
           ruleMessageContainer.style.display = "block";
         } else {
-          // Esconder campo se não há mensagem
           ruleMessageContainer.style.display = "none";
         }
 
@@ -1060,7 +1019,6 @@
           )
           .join("");
 
-        // Update stats
         const current = parseInt(
           document.getElementById("totalAnalysis").textContent
         );
@@ -1085,17 +1043,13 @@
         if (!token) return;
 
         try {
-          // Tentar pegar do localStorage primeiro (mais confiável)
           let userId = localStorage.getItem("userId");
 
-          // Se não tiver no localStorage, tentar decodificar do token (fallback)
           if (!userId) {
             const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-            // Priorizar claims que sabemos que são numéricos: userId, nameid (se for numérico)
-            // Evitar 'sub' se for email
+
             userId = tokenPayload.userId || tokenPayload.nameid;
 
-            // Se ainda não achou ou se pegou algo que não parece número, tentar o claim longo
             if (!userId) {
               userId =
                 tokenPayload[
@@ -1113,7 +1067,6 @@
             return;
           }
 
-          // Ajustar para a estrutura da API C#
           const analise = data.analise || data;
           const emotions =
             analise.emocoes || analise.emotions || data.emocoes || {};
@@ -1123,7 +1076,6 @@
             data.emocao ||
             "neutral";
 
-          // Recuperar nome do paciente do localStorage
           const patientName = localStorage.getItem("patientName") || "Paciente";
 
           const payload = {
@@ -1152,7 +1104,6 @@
             const result = await response.json();
             console.log("[DEBUG] Histórico salvo com sucesso:", result);
 
-            // Se houver mensagem de regra, atualizar o UI
             if (result.suggestedMessage) {
               const ruleMessageContainer = document.getElementById(
                 "ruleMessageContainer"
@@ -1163,19 +1114,15 @@
               ruleMessageContainer.style.display = "block";
             }
           }
-        } catch (error) {
-          // Silently fail for history saving
-        }
+        } catch (error) {}
       }
 
-      // Logout
       document.getElementById("logoutBtn").addEventListener("click", (e) => {
         e.preventDefault();
         localStorage.removeItem("token");
         window.location.href = "login.html";
       });
 
-      // Initialize
       loadUserData();
       loadModels();
     </script>
