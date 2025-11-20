@@ -8,16 +8,23 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Adicionar serviços
-builder.Services.AddControllers()
-    .AddNewtonsoftJson(); // Para suporte a JSON
 
-// Configurar HttpClient para fazer chamadas à API Python
+builder.Services.AddControllers()
+    .AddNewtonsoftJson();
+
 builder.Services.AddHttpClient();
 
-// ===== CONFIGURAÇÃO JWT AUTHENTICATION =====
+
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["Key"];
+
+
+var pythonApiKey = builder.Configuration["PythonApiSettings:ApiKey"];
+
+if (string.IsNullOrEmpty(secretKey) || secretKey.Length < 32)
+{
+    throw new InvalidOperationException("JWT Key não configurada ou muito curta.");
+}
 
 builder.Services.AddAuthentication(options =>
 {
@@ -41,7 +48,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// Configurar CORS (se necessário para front-end)
+// Configurar CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -52,17 +59,17 @@ builder.Services.AddCors(options =>
     });
 });
 
-// OpenAPI para documentação
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configurar pipeline HTTP
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     
-    // Adicionar Scalar API Documentation(Documentação automatica de API)
+    
     app.MapScalarApiReference(options =>
     {
         options
@@ -72,28 +79,14 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Servir arquivos estáticos (HTML de exemplo)
 app.UseStaticFiles();
 app.UseCors("AllowAll");
 
-// ===== ATIVAR AUTENTICAÇÃO E AUTORIZAÇÃO =====
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-//Seção visual do console
-Console.WriteLine("=============================================================");
-Console.WriteLine("🚀 API ASP.NET rodando!");
-Console.WriteLine("📍 URL: https://localhost:7125 (ou http://localhost:5236)");
-Console.WriteLine("📘 Scalar API Docs: https://localhost:7125/scalar/v1");
-Console.WriteLine("🔗 OpenAPI JSON: https://localhost:7125/openapi/v1.json");
-Console.WriteLine("🔐 JWT Authentication: ATIVADO");
-Console.WriteLine("🔑 Python API Key: CONFIGURADO");
-Console.WriteLine("=============================================================");
-Console.WriteLine("⚠️  Certifique-se de que a API Python Flask está rodando!");
-Console.WriteLine("   python api_deepface_flask.py ou a versão debug");
-Console.WriteLine("=============================================================");
 
 app.Run();
 

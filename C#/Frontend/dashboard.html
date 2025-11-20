@@ -36,7 +36,6 @@
         color: var(--text-secondary);
       }
 
-      /* Main Grid Layout */
       .dashboard-grid {
         display: grid;
         grid-template-columns: 1fr 340px;
@@ -44,7 +43,6 @@
         margin-bottom: 24px;
       }
 
-      /* Camera Container - Modern Glass */
       .camera-card {
         background: white;
         border: 1px solid var(--border-primary);
@@ -215,13 +213,61 @@
         box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
       }
 
+      .model-selector-container {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-secondary);
+      }
+
+      .model-selector {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .model-selector label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+      }
+
+      .model-selector select {
+        flex: 1;
+        height: 36px;
+        padding: 0 36px 0 12px;
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-md);
+        background: white;
+        font-size: 13px;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all var(--transition-base);
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b5cf6' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 10px;
+        font-family: "Inter", sans-serif;
+        font-weight: 500;
+      }
+
+      .model-selector select:hover {
+        border-color: var(--gray-300);
+      }
+
+      .model-selector select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+      }
+
       .toggle-description {
         font-size: 12px;
         color: var(--text-secondary);
         margin-top: 8px;
       }
 
-      /* Results Sidebar */
       .results-card {
         background: white;
         border: 1px solid var(--border-primary);
@@ -306,7 +352,6 @@
         margin-top: 8px;
       }
 
-      /* User Info Card */
       .user-card {
         background: white;
         border: 1px solid var(--border-primary);
@@ -372,7 +417,6 @@
         color: var(--text-secondary);
       }
 
-      /* Empty State */
       .empty-state {
         text-align: center;
         padding: 48px 24px;
@@ -385,7 +429,6 @@
         opacity: 0.5;
       }
 
-      /* Responsive */
       @media (max-width: 1024px) {
         .dashboard-grid {
           grid-template-columns: 1fr;
@@ -407,7 +450,6 @@
       }
     </style>
     <style>
-      /* Rule Message */
       .rule-message-container {
         margin-bottom: 20px;
       }
@@ -450,8 +492,8 @@
       }
     </style>
   </head>
+
   <body>
-    <!-- Navigation -->
     <nav class="navbar">
       <div class="navbar-container">
         <a href="index.html" class="navbar-logo">
@@ -470,7 +512,6 @@
       </div>
     </nav>
 
-    <!-- Dashboard Content -->
     <main class="dashboard">
       <div class="dashboard-header">
         <h1 class="dashboard-title">Dashboard</h1>
@@ -479,9 +520,7 @@
         </p>
       </div>
 
-      <!-- Main Grid -->
       <div class="dashboard-grid">
-        <!-- Camera Section -->
         <div class="camera-card">
           <div class="camera-header">
             <h2 class="camera-title">Câmera</h2>
@@ -510,7 +549,6 @@
             </button>
           </div>
 
-          <!-- Auto Capture Toggle -->
           <div class="auto-capture-toggle">
             <div class="toggle-container">
               <span class="toggle-label">Captura Automática</span>
@@ -529,6 +567,20 @@
               </select>
             </div>
 
+            <div class="model-selector-container">
+              <div class="model-selector">
+                <label for="modelSelect">Modelo IA:</label>
+                <select id="modelSelect">
+                  <option value="Facenet" selected>Facenet (Padrão)</option>
+                  <option value="VGG-Face">VGG-Face</option>
+                  <option value="Facenet512">Facenet512</option>
+                  <option value="OpenFace">OpenFace</option>
+                  <option value="ArcFace">ArcFace</option>
+                  <option value="Dlib">Dlib</option>
+                </select>
+              </div>
+            </div>
+
             <p class="toggle-description">
               Ative para capturar e analisar automaticamente no intervalo
               escolhido
@@ -536,14 +588,12 @@
           </div>
         </div>
 
-        <!-- Results Sidebar -->
         <div class="results-card">
           <div class="results-header">
             <h2 class="results-title">Resultados</h2>
             <p class="results-subtitle">Últimas emoções detectadas</p>
           </div>
 
-          <!-- Campo para mensagem da regra -->
           <div
             id="ruleMessageContainer"
             class="rule-message-container"
@@ -567,7 +617,6 @@
         </div>
       </div>
 
-      <!-- User Info -->
       <div class="user-card">
         <div class="user-header">
           <div class="user-avatar">U</div>
@@ -599,7 +648,6 @@
       let analysisInterval = null;
       let autoCaptureEnabled = false;
 
-      // Get selected interval in milliseconds
       function getIntervalMs() {
         const seconds = parseInt(
           document.getElementById("intervalSelect").value
@@ -607,7 +655,6 @@
         return seconds * 1000;
       }
 
-      // Auto capture toggle
       document
         .getElementById("autoCaptureToggle")
         .addEventListener("click", function () {
@@ -623,12 +670,10 @@
           }
         });
 
-      // Update interval when changed
       document
         .getElementById("intervalSelect")
         .addEventListener("change", function () {
           if (autoCaptureEnabled && stream) {
-            // Restart interval with new duration
             if (analysisInterval) {
               clearInterval(analysisInterval);
             }
@@ -637,7 +682,6 @@
           }
         });
 
-      // Load user data
       async function loadUserData() {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -653,6 +697,11 @@
           if (!response.ok) throw new Error("Failed to load user");
 
           const user = await response.json();
+
+          if (user.patientName) {
+            localStorage.setItem("patientName", user.patientName);
+          }
+
           document.getElementById("userName").textContent = `Paciente: ${
             user.patientName || "Não informado"
           }`;
@@ -666,12 +715,41 @@
         }
       }
 
-      // Camera functions
+      async function loadModels() {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) return;
+
+          const response = await fetch(
+            `${FACIAL_API_URL}/FacialAnalysis/models`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            const select = document.getElementById("modelSelect");
+            if (select && data.modelos_disponiveis) {
+              select.innerHTML = "";
+              data.modelos_disponiveis.forEach((model) => {
+                const option = document.createElement("option");
+                option.value = model.nome;
+                option.textContent = `${model.nome} (${model.velocidade})`;
+                if (model.recomendado) option.selected = true;
+                select.appendChild(option);
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error loading models:", error);
+        }
+      }
+
       document
         .getElementById("startCameraBtn")
         .addEventListener("click", async () => {
           try {
-            // Verificar se já há uma stream ativa
             if (stream) {
               stream.getTracks().forEach((track) => track.stop());
             }
@@ -687,7 +765,6 @@
             const video = document.getElementById("videoElement");
             video.srcObject = stream;
 
-            // Aguardar o vídeo carregar e reproduzir
             await new Promise((resolve) => {
               video.onloadedmetadata = () => {
                 video
@@ -703,7 +780,6 @@
             document.getElementById("captureFaceBtn").disabled = false;
             document.getElementById("stopCameraBtn").disabled = false;
 
-            // Start auto-capture if enabled
             if (autoCaptureEnabled) {
               const interval = getIntervalMs();
               analysisInterval = setInterval(captureAndAnalyze, interval);
@@ -739,7 +815,6 @@
           return;
         }
 
-        // Verificar se há um stream ativo
         if (!stream || !stream.active) {
           alert("Câmera não está ativa. Clique em 'Iniciar Câmera' primeiro.");
           return;
@@ -765,7 +840,10 @@
 
             const formData = new FormData();
             formData.append("file", blob, "capture.jpg");
-            formData.append("model", "Facenet");
+
+            const modelSelect = document.getElementById("modelSelect");
+            const selectedModel = modelSelect ? modelSelect.value : "Facenet";
+            formData.append("model", selectedModel);
             formData.append("actions", "emotion,age,gender");
 
             try {
@@ -776,7 +854,6 @@
                 return;
               }
 
-              // Mostrar indicador de carregamento
               const captureBtn = document.getElementById("captureFaceBtn");
               const originalText = captureBtn.textContent;
               captureBtn.textContent = "Analisando...";
@@ -802,13 +879,11 @@
               displayResults(data);
               saveToHistory(data);
 
-              // Restaurar botão
               captureBtn.textContent = originalText;
               captureBtn.disabled = false;
             } catch (error) {
               alert("Erro ao analisar: " + error.message);
 
-              // Restaurar botão em caso de erro
               const captureBtn = document.getElementById("captureFaceBtn");
               captureBtn.textContent = "Capturar";
               captureBtn.disabled = false;
@@ -819,13 +894,10 @@
         );
       }
 
-      // Função para mostrar alertas
       function showAlert(message, type = "info") {
-        // Remover alertas existentes
         const existingAlerts = document.querySelectorAll(".alert-message");
         existingAlerts.forEach((alert) => alert.remove());
 
-        // Criar novo alerta
         const alertDiv = document.createElement("div");
         alertDiv.className = `alert-message alert-${type}`;
         alertDiv.innerHTML = `
@@ -836,7 +908,6 @@
           </div>
         `;
 
-        // Adicionar estilos inline se não existirem
         if (!document.querySelector(".alert-styles")) {
           const styles = document.createElement("style");
           styles.className = "alert-styles";
@@ -885,7 +956,6 @@
 
         document.body.appendChild(alertDiv);
 
-        // Auto-remover após 5 segundos
         setTimeout(() => {
           if (alertDiv.parentElement) {
             alertDiv.remove();
@@ -896,7 +966,6 @@
       function displayResults(data) {
         const container = document.getElementById("resultsContainer");
 
-        // Verificar se há mensagem de alerta da regra
         const suggestedMessage =
           data.mensagem || data.mensagem_sugerida || data.suggestedMessage;
         const ruleMessageContainer = document.getElementById(
@@ -905,11 +974,9 @@
         const ruleMessageText = document.getElementById("ruleMessageText");
 
         if (suggestedMessage) {
-          // Mostrar mensagem da regra no campo dedicado
           ruleMessageText.textContent = suggestedMessage;
           ruleMessageContainer.style.display = "block";
         } else {
-          // Esconder campo se não há mensagem
           ruleMessageContainer.style.display = "none";
         }
 
@@ -952,7 +1019,6 @@
           )
           .join("");
 
-        // Update stats
         const current = parseInt(
           document.getElementById("totalAnalysis").textContent
         );
@@ -977,13 +1043,30 @@
         if (!token) return;
 
         try {
-          // Decodificar o token para pegar o userId
-          const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-          const userId = parseInt(
-            tokenPayload.nameid || tokenPayload.sub || tokenPayload.userId
-          );
+          let userId = localStorage.getItem("userId");
 
-          // Ajustar para a estrutura da API C#
+          if (!userId) {
+            const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+
+            userId = tokenPayload.userId || tokenPayload.nameid;
+
+            if (!userId) {
+              userId =
+                tokenPayload[
+                  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+                ];
+            }
+          }
+
+          userId = parseInt(userId);
+
+          if (isNaN(userId)) {
+            console.error(
+              "[DEBUG] Não foi possível identificar o UserId para salvar histórico"
+            );
+            return;
+          }
+
           const analise = data.analise || data;
           const emotions =
             analise.emocoes || analise.emotions || data.emocoes || {};
@@ -993,15 +1076,19 @@
             data.emocao ||
             "neutral";
 
+          const patientName = localStorage.getItem("patientName") || "Paciente";
+
           const payload = {
-            caregiverId: userId,
-            patientName: "Dashboard",
+            cuidadorId: userId,
+            patientName: patientName,
             emotionsDetected: emotions,
             dominantEmotion: dominant,
             timestamp: new Date().toISOString(),
           };
 
-          const response = await fetch(`${API_URL}/history/caregiver-emotion`, {
+          console.log("[DEBUG] Salvando no histórico:", payload);
+
+          const response = await fetch(`${API_URL}/history/cuidador-emotion`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1012,21 +1099,32 @@
 
           if (!response.ok) {
             const errorText = await response.text();
+            console.error("[DEBUG] Erro ao salvar histórico:", errorText);
+          } else {
+            const result = await response.json();
+            console.log("[DEBUG] Histórico salvo com sucesso:", result);
+
+            if (result.suggestedMessage) {
+              const ruleMessageContainer = document.getElementById(
+                "ruleMessageContainer"
+              );
+              const ruleMessageText =
+                document.getElementById("ruleMessageText");
+              ruleMessageText.textContent = result.suggestedMessage;
+              ruleMessageContainer.style.display = "block";
+            }
           }
-        } catch (error) {
-          // Silently fail for history saving
-        }
+        } catch (error) {}
       }
 
-      // Logout
       document.getElementById("logoutBtn").addEventListener("click", (e) => {
         e.preventDefault();
         localStorage.removeItem("token");
         window.location.href = "login.html";
       });
 
-      // Initialize
       loadUserData();
+      loadModels();
     </script>
   </body>
 </html>

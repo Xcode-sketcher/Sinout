@@ -24,7 +24,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# DeepFace weights (modelos baixados)
+# DeepFace weights
 .deepface/
 
 # VS Code
@@ -48,12 +48,12 @@ Thumbs.db
 *.tmp
 *.temp
 
-# C# (se tiver projeto .NET)
+# C# 
 bin/
 obj/
 *.user
 *.suo
 .vs/
 
-# Node modules (se usar Angular/React depois)
+# Node modules
 node_modules/

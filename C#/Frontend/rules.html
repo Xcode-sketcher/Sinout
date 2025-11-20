@@ -37,7 +37,6 @@
         line-height: 1.6;
       }
 
-      /* Main Grid */
       .rules-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -45,7 +44,6 @@
         margin-bottom: 24px;
       }
 
-      /* Add Rule Card */
       .add-rule-card {
         background: white;
         border: 1px solid var(--border-primary);
@@ -61,7 +59,6 @@
         margin-bottom: 24px;
       }
 
-      /* Intensity Selector */
       .intensity-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -102,7 +99,6 @@
         color: var(--text-secondary);
       }
 
-      /* Form */
       .form-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -116,7 +112,6 @@
         justify-content: flex-end;
       }
 
-      /* Rules List */
       .rules-list-card {
         background: white;
         border: 1px solid var(--border-primary);
@@ -190,7 +185,6 @@
         justify-content: flex-end;
       }
 
-      /* Empty State */
       .empty-state {
         text-align: center;
         padding: 48px 24px;
@@ -215,7 +209,6 @@
         color: var(--text-secondary);
       }
 
-      /* Responsive */
       @media (max-width: 1024px) {
         .rules-grid {
           grid-template-columns: 1fr;
@@ -246,7 +239,6 @@
     </style>
   </head>
   <body>
-    <!-- Navigation -->
     <nav class="navbar">
       <div class="navbar-container">
         <a href="index.html" class="navbar-logo">
@@ -263,7 +255,6 @@
       </div>
     </nav>
 
-    <!-- Rules Content -->
     <main class="rules">
       <div class="rules-header">
         <h1 class="rules-title">Regras de Emoções</h1>
@@ -274,7 +265,6 @@
       </div>
 
       <div class="rules-grid">
-        <!-- Add Rule Form -->
         <div class="add-rule-card">
           <h2 class="card-title">Criar Nova Regra</h2>
 
@@ -355,7 +345,6 @@
           </form>
         </div>
 
-        <!-- Rules List -->
         <div class="rules-list-card">
           <h2 class="card-title">Minhas Regras</h2>
           <div id="rulesList">
@@ -373,7 +362,6 @@
       const API_URL = "http://localhost:5240/api";
       let selectedIntensity = null;
 
-      // Check authentication
       function checkAuth() {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -383,7 +371,6 @@
         return true;
       }
 
-      // Intensity selection
       document.querySelectorAll(".intensity-option").forEach((option) => {
         option.addEventListener("click", function () {
           document
@@ -395,22 +382,16 @@
         });
       });
 
-      // Load rules
       async function loadRules() {
         if (!checkAuth()) return;
 
         const token = localStorage.getItem("token");
 
         try {
-          console.log(
-            "Loading rules from:",
-            `${API_URL}/emotion-mappings/my-rules`
-          );
           const response = await fetch(`${API_URL}/emotion-mappings/my-rules`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
-          console.log("Response status:", response.status);
           if (!response.ok) {
             const errorText = await response.text();
             console.error("Error response:", errorText);
@@ -418,7 +399,6 @@
           }
 
           const rules = await response.json();
-          console.log("Rules received:", rules);
           displayRules(rules);
         } catch (error) {
           console.error("Error loading rules:", error);
@@ -475,7 +455,6 @@
           .join("");
       }
 
-      // Create rule
       document
         .getElementById("ruleForm")
         .addEventListener("submit", async (e) => {
@@ -509,7 +488,6 @@
 
             if (!response.ok) throw new Error("Failed to create rule");
 
-            alert("Regra criada com sucesso!");
             document.getElementById("ruleForm").reset();
             document
               .querySelectorAll(".intensity-option")
@@ -522,7 +500,6 @@
           }
         });
 
-      // Delete rule
       async function deleteRule(id) {
         if (!confirm("Deseja realmente excluir esta regra?")) return;
 
@@ -536,15 +513,12 @@
 
           if (!response.ok) throw new Error("Failed to delete rule");
 
-          alert("Regra excluída com sucesso!");
           loadRules();
         } catch (error) {
           console.error("Error deleting rule:", error);
-          alert("Erro ao excluir regra. Tente novamente.");
         }
       }
 
-      // Clear form
       document.getElementById("clearBtn").addEventListener("click", () => {
         document.getElementById("ruleForm").reset();
         document
@@ -566,14 +540,12 @@
         return translations[emotion] || emotion;
       }
 
-      // Logout
       document.getElementById("logoutBtn").addEventListener("click", (e) => {
         e.preventDefault();
         localStorage.removeItem("token");
         window.location.href = "login.html";
       });
 
-      // Initialize
       checkAuth();
       loadRules();
     </script>

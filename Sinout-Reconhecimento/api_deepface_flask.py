@@ -192,7 +192,7 @@ def analisar_imagem():
 
     Parâmetros:
         - file: arquivo de imagem (obrigatório)
-        - model: nome do modelo (opcional, padrão: Facenet)
+        - detector: detector de faces (opcional, padrão: opencv)
         - actions: lista de análises (opcional, padrão: emotion,age,gender)
 
     Retorna:
@@ -216,7 +216,9 @@ def analisar_imagem():
             }), 400
 
         # ⚙️ FASE 1: LER PARÂMETROS OPCIONAIS
-        modelo = request.form.get('model', MODELO_PADRAO)
+        # Nota: 'model' é ignorado pois analyze() usa modelos fixos para atributos.
+        # Usamos 'detector' para o backend de detecção facial.
+        detector = request.form.get('detector', 'opencv')
         actions_str = request.form.get('actions', 'emotion,age,gender')
         actions = [a.strip() for a in actions_str.split(',')]
 
@@ -238,7 +240,7 @@ def analisar_imagem():
             img,
             actions=actions,              # O que analisar: emoção, idade, gênero
             enforce_detection=False,      # Não falhar se não detectar rosto perfeitamente
-            detector_backend='opencv',    # Detector de rostos (opencv é padrão e rápido)
+            detector_backend=detector,    # Detector de rostos (opencv é padrão e rápido)
             silent=True                   # Não mostrar logs no console
         )
 
@@ -252,7 +254,7 @@ def analisar_imagem():
         resposta = {
             "sucesso": True,
             "timestamp": datetime.now().isoformat(),  # Quando foi analisado
-            "modelo_usado": modelo,
+            "detector_usado": detector,
             "analise": {
                 "emocao_dominante": resultado.get('dominant_emotion'),  # Ex: "happy"
                 "emocoes": resultado.get('emotion', {}),                 # Ex: {"happy": 85.5, "sad": 10.2, ...}
@@ -315,7 +317,7 @@ def analisar_base64():
             }), 400
 
         # Ler parâmetros opcionais
-        modelo = data.get('model', MODELO_PADRAO)
+        detector = data.get('detector', 'opencv')
         actions = data.get('actions', ['emotion', 'age', 'gender'])
 
         # Analisar com DeepFace
@@ -324,7 +326,7 @@ def analisar_base64():
             img,
             actions=actions,
             enforce_detection=False,
-            detector_backend='opencv',  # Usar detector padrão
+            detector_backend=detector,  # Usar detector padrão
             silent=True
         )
 
@@ -335,7 +337,7 @@ def analisar_base64():
         resposta = {
             "sucesso": True,
             "timestamp": datetime.now().isoformat(),
-            "modelo_usado": modelo,
+            "detector_usado": detector,
             "analise": {
                 "emocao_dominante": resultado.get('dominant_emotion'),
                 "emocoes": resultado.get('emotion', {}),
@@ -371,7 +373,7 @@ def analisar_multiplas():
             }), 400
 
         file = request.files['file']
-        modelo = request.form.get('model', MODELO_PADRAO)
+        detector = request.form.get('detector', 'opencv')
 
         # Ler imagem
         file_bytes = np.frombuffer(file.read(), np.uint8)
@@ -400,7 +402,7 @@ def analisar_multiplas():
                 face_region,
                 actions=['emotion', 'age', 'gender'],
                 enforce_detection=False,
-                detector_backend=modelo,
+                detector_backend=detector,
                 silent=True
             )
 
@@ -419,7 +421,7 @@ def analisar_multiplas():
         return jsonify({
             "sucesso": True,
             "timestamp": datetime.now().isoformat(),
-            "modelo_usado": modelo,
+            "detector_usado": detector,
             "total_faces": len(resultados),
             "faces": resultados
         }), 200

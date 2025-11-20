@@ -282,7 +282,6 @@
         }, 5000);
       }
 
-      // Password strength indicator
       document
         .getElementById("passwordInput")
         .addEventListener("input", function (e) {
@@ -316,13 +315,11 @@
             "confirmPasswordInput"
           ).value;
 
-          // Validate passwords match
           if (password !== confirmPassword) {
             showAlert("As senhas não coincidem");
             return;
           }
 
-          // Validate password strength
           if (password.length < 6) {
             showAlert("A senha deve ter no mínimo 6 caracteres");
             return;
@@ -331,7 +328,6 @@
           try {
             const payload = { name, email, password };
 
-            // Adicionar campos opcionais apenas se preenchidos
             if (phone) payload.phone = phone;
             if (patientName) payload.patientName = patientName;
 
@@ -349,7 +345,6 @@
 
             showAlert("Conta criada com sucesso!", "success");
 
-            // Redirect to login
             setTimeout(() => {
               window.location.href = "login.html";
             }, 2000);

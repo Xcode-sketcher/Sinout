@@ -271,7 +271,6 @@
             try {
               data = JSON.parse(responseText);
             } catch (jsonError) {
-              // Se não conseguir fazer parse do JSON, usar o texto da resposta
               throw new Error(responseText || "Erro de resposta do servidor");
             }
 
@@ -279,25 +278,24 @@
             console.log("Response data:", data);
 
             if (!response.ok) {
-              // Tratar diferentes tipos de erro do backend
               if (Array.isArray(data)) {
-                // Erro de validação (lista de erros do FluentValidation)
                 const errorMessages = data
                   .map((error) => error.ErrorMessage || error)
                   .join(", ");
                 throw new Error(errorMessages);
               } else if (data.message) {
-                // Erro com message (erro de autenticação)
                 throw new Error(data.message);
               } else {
-                // Outro tipo de erro
                 throw new Error("Erro desconhecido no servidor");
               }
             }
 
-            // Save token
             if (data.token) {
               localStorage.setItem("token", data.token);
+              if (data.user) {
+                localStorage.setItem("userId", data.user.userId);
+                localStorage.setItem("userName", data.user.name);
+              }
               console.log("Token salvo:", data.token.substring(0, 20) + "...");
             } else {
               console.error("Token não encontrado na resposta:", data);
@@ -306,7 +304,6 @@
 
             showAlert("Login realizado com sucesso!", "success");
 
-            // Redirect to dashboard
             setTimeout(() => {
               window.location.href = "dashboard.html";
             }, 1000);

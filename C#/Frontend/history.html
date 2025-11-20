@@ -71,7 +71,6 @@
         box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
       }
 
-      /* Chart Card */
       .chart-card {
         background: white;
         border: 1px solid var(--border-primary);
@@ -102,7 +101,6 @@
         height: 300px;
       }
 
-      /* History List */
       .history-grid {
         display: grid;
         gap: 16px;
@@ -217,7 +215,6 @@
         font-family: "Courier New", monospace;
       }
 
-      /* Empty State */
       .empty-state {
         text-align: center;
         padding: 80px 24px;
@@ -244,7 +241,6 @@
         color: var(--text-secondary);
       }
 
-      /* Loading */
       .loading {
         text-align: center;
         padding: 48px;
@@ -266,7 +262,6 @@
         }
       }
 
-      /* Responsive */
       @media (max-width: 768px) {
         .history {
           padding: 16px;
@@ -292,7 +287,6 @@
     </style>
   </head>
   <body>
-    <!-- Navigation -->
     <nav class="navbar">
       <div class="navbar-container">
         <a href="index.html" class="navbar-logo">
@@ -311,7 +305,6 @@
       </div>
     </nav>
 
-    <!-- History Content -->
     <main class="history">
       <div class="history-header">
         <h1 class="history-title">Histórico de Emoções</h1>
@@ -326,7 +319,6 @@
         </div>
       </div>
 
-      <!-- Chart -->
       <div class="chart-card">
         <div class="chart-header">
           <h2 class="chart-title">Distribuição de Emoções</h2>
@@ -337,7 +329,6 @@
         </div>
       </div>
 
-      <!-- History List -->
       <div class="history-grid" id="historyList">
         <div class="loading">
           <div class="loading-spinner"></div>
@@ -350,7 +341,6 @@
       const API_URL = "http://localhost:5240/api";
       let emotionsChart = null;
 
-      // Check authentication
       function checkAuth() {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -360,7 +350,6 @@
         return true;
       }
 
-      // Load history data
       async function loadHistory() {
         if (!checkAuth()) return;
 
@@ -476,7 +465,6 @@
       function updateChart(records) {
         if (!records || records.length === 0) return;
 
-        // Aggregate emotions
         const emotionTotals = {};
         records.forEach((record) => {
           const emotions = record.emotionsDetected || {};
@@ -558,7 +546,6 @@
         });
       }
 
-      // Event listeners
       document
         .getElementById("periodFilter")
         .addEventListener("change", loadHistory);
@@ -572,7 +559,6 @@
         window.location.href = "login.html";
       });
 
-      // Initialize
       checkAuth();
       loadHistory();
     </script>

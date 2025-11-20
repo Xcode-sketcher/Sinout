@@ -3,7 +3,7 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// Inicializar câmera
+
 async function startCamera() {
     console.log("[DEBUG] Iniciando câmera...");
 
@@ -40,7 +40,7 @@ async function startCamera() {
     }
 }
 
-// Parar câmera
+
 function stopCamera() {
     if (stream) {
         stream.getTracks().forEach((track) => track.stop());
@@ -55,22 +55,22 @@ function stopCamera() {
     showStatus("Câmera desativada", "disconnected");
 }
 
-// Capturar frame e enviar para análise
+
 async function captureAndAnalyze() {
     console.log("[DEBUG] Iniciando captura e análise...");
 
-    // Verificar se canvas tem dimensões válidas
+
     if (canvas.width === 0 || canvas.height === 0) {
         console.error("[DEBUG] Canvas não tem dimensões válidas:", canvas.width, canvas.height);
         showError("Erro: câmera não foi inicializada corretamente");
         return;
     }
 
-    // Desenhar frame atual no canvas
+
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     console.log("[DEBUG] Frame desenhado no canvas:", canvas.width, "x", canvas.height);
 
-    // Converter canvas para blob
+
     canvas.toBlob(
         async (blob) => {
             if (!blob) {
@@ -82,7 +82,7 @@ async function captureAndAnalyze() {
             console.log("[DEBUG] Blob criado com tamanho:", blob.size, "bytes");
             console.log("[DEBUG] Tipo do blob:", blob.type);
 
-            // Enviar para API
+
             await sendImageToAPI(blob);
         },
         "image/jpeg",
@@ -90,7 +90,7 @@ async function captureAndAnalyze() {
     );
 }
 
-// Enviar imagem para API Flask(Python)
+
 async function sendImageToAPI(imageBlob) {
     const apiUrl = document.getElementById("apiUrl").value;
     const model = document.getElementById("modelSelect").value;
@@ -114,7 +114,7 @@ async function sendImageToAPI(imageBlob) {
 
         console.log("[DEBUG] Endpoint usado:", endpoint);
 
-        // Obter token JWT do localStorage
+
         const token = localStorage.getItem("token");
         console.log("[DEBUG] Token encontrado:", token ? "Sim" : "Não");
 
@@ -124,7 +124,7 @@ async function sendImageToAPI(imageBlob) {
 
         const headers = {};
         if (apiUrl.includes(':5236')) {
-            // API C# requer Bearer token
+
             headers['Authorization'] = `Bearer ${token}`;
             console.log("[DEBUG] Header Authorization adicionado");
         }
@@ -162,20 +162,20 @@ async function sendImageToAPI(imageBlob) {
     }
 }
 
-// Exibir resultados do reconhecimento facial
+
 function displayResults(data) {
     console.log("[DEBUG] Exibindo resultados:", data);
 
-    // Ajustar para a estrutura da API C#
+
     const analise = data.analise || data;
     console.log("[DEBUG] Estrutura analise:", analise);
 
-    // Emoção dominante
+
     const emocaoDominante = analise.emocao_dominante || analise.emocao || data.emocao || "";
     document.getElementById("dominantEmotion").textContent = translateEmotion(emocaoDominante);
     console.log("[DEBUG] Emoção dominante:", emocaoDominante);
 
-    // Idade e gênero (Remover no futuro, afinal o usuário não quer a estimativa de sua idade sendo exibida sempre)
+
     const idade = analise.idade || data.idade || "";
     const genero = analise.genero || data.genero || "";
 
@@ -183,7 +183,7 @@ function displayResults(data) {
     document.getElementById("gender").textContent = genero === "Man" ? "Masculino" : genero === "Woman" ? "Feminino" : genero || "-";
     document.getElementById("model").textContent = data.modelo_usado || "Desconhecido";
 
-    // Grid de emoções
+
     const emotionsGrid = document.getElementById("emotionsGrid");
     emotionsGrid.innerHTML = "";
 
@@ -194,7 +194,7 @@ function displayResults(data) {
         (a, b) => b[1] - a[1]
     );
 
-    //Laço de repetição para criação das barras de emoções com valores dinâmicos
+
     sortedEmotions.forEach(([emotion, value]) => {
         const card = document.createElement("div");
         card.className = "emotion-card";
@@ -212,7 +212,7 @@ function displayResults(data) {
     console.log("[DEBUG] Resultados exibidos com sucesso");
 }
 
-// Recebe as emoções capturadas(JSON) e transforma em palavas a serem exibidas
+
 function translateEmotion(emotion) {
     const translations = {
         happy: "Feliz 😊",
@@ -226,7 +226,7 @@ function translateEmotion(emotion) {
     return translations[emotion] || emotion;
 }
 
-// Verificar disponibilidade de API (Terá utilidade após o deploy)
+
 async function checkAPIHealth() {
     const apiUrl = document.getElementById("apiUrl").value;
     console.log("[DEBUG] Verificando saúde da API:", apiUrl);
@@ -264,7 +264,7 @@ async function checkAPIHealth() {
     }
 }
 
-// Funções adicionais para exibir, remover, ou adicionar erros/mensagens
+
 function showLoading(show) {
     document.getElementById("loading").classList.toggle("show", show);
 }
@@ -289,7 +289,7 @@ function showStatus(message, type) {
     statusDiv.className = `status ${type}`;
 }
 
-// Verificar API ao carregar página
+
 window.addEventListener("load", () => {
     checkAPIHealth();
 });
