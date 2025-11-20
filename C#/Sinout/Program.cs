@@ -19,6 +19,19 @@ builder.Services.AddHttpClient();
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["Key"];
 
+// Validação de Configuração Crítica
+var pythonApiKey = builder.Configuration["PythonApiSettings:ApiKey"];
+
+if (string.IsNullOrEmpty(secretKey) || secretKey.Length < 32)
+{
+    throw new InvalidOperationException("JWT Key não configurada ou muito curta. Configure 'Jwt:Key' via User Secrets ou Variáveis de Ambiente.");
+}
+
+if (string.IsNullOrEmpty(pythonApiKey))
+{
+    Console.WriteLine("⚠️ AVISO: PythonApiSettings:ApiKey não encontrada. A comunicação com a API Python pode falhar.");
+}
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

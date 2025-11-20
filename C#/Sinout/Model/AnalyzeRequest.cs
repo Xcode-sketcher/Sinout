@@ -10,5 +10,6 @@ namespace Sinout.Model
     {
         public string ImageBase64 { get; set; }
         public string? Model { get; set; }
+        public string? Detector { get; set; }
     }
 }

@@ -215,6 +215,56 @@
         box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
       }
 
+      /* Model Selector - Same style as interval selector */
+      .model-selector-container {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-secondary);
+      }
+
+      .model-selector {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .model-selector label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+      }
+
+      .model-selector select {
+        flex: 1;
+        height: 36px;
+        padding: 0 36px 0 12px;
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-md);
+        background: white;
+        font-size: 13px;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all var(--transition-base);
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b5cf6' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 10px;
+        font-family: "Inter", sans-serif;
+        font-weight: 500;
+      }
+
+      .model-selector select:hover {
+        border-color: var(--gray-300);
+      }
+
+      .model-selector select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+      }
+
       .toggle-description {
         font-size: 12px;
         color: var(--text-secondary);
@@ -450,6 +500,7 @@
       }
     </style>
   </head>
+
   <body>
     <!-- Navigation -->
     <nav class="navbar">
@@ -527,6 +578,21 @@
                 <option value="15">15 segundos</option>
                 <option value="20">20 segundos</option>
               </select>
+            </div>
+
+            <!-- Model Selector -->
+            <div class="model-selector-container">
+              <div class="model-selector">
+                <label for="modelSelect">Modelo IA:</label>
+                <select id="modelSelect">
+                  <option value="Facenet" selected>Facenet (Padrão)</option>
+                  <option value="VGG-Face">VGG-Face</option>
+                  <option value="Facenet512">Facenet512</option>
+                  <option value="OpenFace">OpenFace</option>
+                  <option value="ArcFace">ArcFace</option>
+                  <option value="Dlib">Dlib</option>
+                </select>
+              </div>
             </div>
 
             <p class="toggle-description">
@@ -653,6 +719,12 @@
           if (!response.ok) throw new Error("Failed to load user");
 
           const user = await response.json();
+
+          // Salvar nome do paciente para uso posterior
+          if (user.patientName) {
+            localStorage.setItem("patientName", user.patientName);
+          }
+
           document.getElementById("userName").textContent = `Paciente: ${
             user.patientName || "Não informado"
           }`;
@@ -663,6 +735,38 @@
             (user.patientName || "P")[0].toUpperCase();
         } catch (error) {
           console.error("Error loading user:", error);
+        }
+      }
+
+      // Load available models
+      async function loadModels() {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) return;
+
+          const response = await fetch(
+            `${FACIAL_API_URL}/FacialAnalysis/models`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            const select = document.getElementById("modelSelect");
+            if (select && data.modelos_disponiveis) {
+              select.innerHTML = ""; // Clear existing
+              data.modelos_disponiveis.forEach((model) => {
+                const option = document.createElement("option");
+                option.value = model.nome;
+                option.textContent = `${model.nome} (${model.velocidade})`;
+                if (model.recomendado) option.selected = true;
+                select.appendChild(option);
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error loading models:", error);
         }
       }
 
@@ -765,7 +869,11 @@
 
             const formData = new FormData();
             formData.append("file", blob, "capture.jpg");
-            formData.append("model", "Facenet");
+
+            // Get selected model
+            const modelSelect = document.getElementById("modelSelect");
+            const selectedModel = modelSelect ? modelSelect.value : "Facenet";
+            formData.append("model", selectedModel);
             formData.append("actions", "emotion,age,gender");
 
             try {
@@ -977,11 +1085,33 @@
         if (!token) return;
 
         try {
-          // Decodificar o token para pegar o userId
-          const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-          const userId = parseInt(
-            tokenPayload.nameid || tokenPayload.sub || tokenPayload.userId
-          );
+          // Tentar pegar do localStorage primeiro (mais confiável)
+          let userId = localStorage.getItem("userId");
+
+          // Se não tiver no localStorage, tentar decodificar do token (fallback)
+          if (!userId) {
+            const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+            // Priorizar claims que sabemos que são numéricos: userId, nameid (se for numérico)
+            // Evitar 'sub' se for email
+            userId = tokenPayload.userId || tokenPayload.nameid;
+
+            // Se ainda não achou ou se pegou algo que não parece número, tentar o claim longo
+            if (!userId) {
+              userId =
+                tokenPayload[
+                  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+                ];
+            }
+          }
+
+          userId = parseInt(userId);
+
+          if (isNaN(userId)) {
+            console.error(
+              "[DEBUG] Não foi possível identificar o UserId para salvar histórico"
+            );
+            return;
+          }
 
           // Ajustar para a estrutura da API C#
           const analise = data.analise || data;
@@ -993,15 +1123,20 @@
             data.emocao ||
             "neutral";
 
+          // Recuperar nome do paciente do localStorage
+          const patientName = localStorage.getItem("patientName") || "Paciente";
+
           const payload = {
-            caregiverId: userId,
-            patientName: "Dashboard",
+            cuidadorId: userId,
+            patientName: patientName,
             emotionsDetected: emotions,
             dominantEmotion: dominant,
             timestamp: new Date().toISOString(),
           };
 
-          const response = await fetch(`${API_URL}/history/caregiver-emotion`, {
+          console.log("[DEBUG] Salvando no histórico:", payload);
+
+          const response = await fetch(`${API_URL}/history/cuidador-emotion`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1012,6 +1147,21 @@
 
           if (!response.ok) {
             const errorText = await response.text();
+            console.error("[DEBUG] Erro ao salvar histórico:", errorText);
+          } else {
+            const result = await response.json();
+            console.log("[DEBUG] Histórico salvo com sucesso:", result);
+
+            // Se houver mensagem de regra, atualizar o UI
+            if (result.suggestedMessage) {
+              const ruleMessageContainer = document.getElementById(
+                "ruleMessageContainer"
+              );
+              const ruleMessageText =
+                document.getElementById("ruleMessageText");
+              ruleMessageText.textContent = result.suggestedMessage;
+              ruleMessageContainer.style.display = "block";
+            }
           }
         } catch (error) {
           // Silently fail for history saving
@@ -1027,6 +1177,7 @@
 
       // Initialize
       loadUserData();
+      loadModels();
     </script>
   </body>
 </html>

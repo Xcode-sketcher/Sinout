@@ -205,8 +205,8 @@ def analisar_imagem():
             }), 400
         
         # Ler parâmetros
-        modelo = request.form.get('model', MODELO_PADRAO)
-        logger.info(f"Modelo: {modelo}")
+        detector = request.form.get('detector', 'opencv')
+        logger.info(f"Detector: {detector}")
         
         # Ler imagem
         logger.info("Decodificando imagem...")
@@ -225,12 +225,12 @@ def analisar_imagem():
         logger.info(f"Imagem decodificada com sucesso! Dimensões: {img.shape}")
         
         # Analisar com DeepFace
-        logger.info(f"Iniciando análise com modelo {modelo}...")
+        logger.info(f"Iniciando análise com detector {detector}...")
         resultado = DeepFace.analyze(
             img,
             actions=['emotion', 'age', 'gender'],
             enforce_detection=False,
-            detector_backend=modelo,
+            detector_backend=detector,
             silent=True
         )
         
@@ -242,7 +242,7 @@ def analisar_imagem():
         resposta = {
             "sucesso": True,
             "timestamp": datetime.now().isoformat(),
-            "modelo_usado": modelo,
+            "detector_usado": detector,
             "analise": {
                 "emocao_dominante": resultado.get('dominant_emotion'),
                 "emocoes": resultado.get('emotion', {}),

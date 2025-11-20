@@ -32,7 +32,7 @@ namespace Sinout.Controllers
         }
 
         [HttpPost("analyze")]
-        public async Task<IActionResult> AnalisarFace([FromForm] IFormFile file, [FromForm] string? model = "Facenet")
+        public async Task<IActionResult> AnalisarFace([FromForm] IFormFile file, [FromForm] string? model = "Facenet", [FromForm] string? detector = "opencv")
         {
             try
             {
@@ -47,14 +47,101 @@ namespace Sinout.Controllers
                 var imageBytes = await GetBytesFromFormFile(file);
                 content.Add(new ByteArrayContent(imageBytes), "file", file.FileName);
                 content.Add(new StringContent(model ?? "Facenet"), "model");
+                content.Add(new StringContent(detector ?? "opencv"), "detector");
                 content.Add(new StringContent("emotion,age,gender"), "actions");
 
                 var pythonRequest = new HttpRequestMessage(HttpMethod.Post, $"{_pythonApiUrl}/analyze");
                 pythonRequest.Content = content;
                 pythonRequest.Headers.Add("X-API-Key", _pythonApiKey);
 
+                // Log detalhado para debug
+                Console.WriteLine($"[DEBUG] 🔑 Enviando para Python API: {_pythonApiUrl}/analyze");
+                Console.WriteLine($"[DEBUG] 🔑 API Key (primeiros 20 chars): {(_pythonApiKey?.Length > 20 ? _pythonApiKey.Substring(0, 20) + "..." : _pythonApiKey ?? "NULL")}");
+                Console.WriteLine($"[DEBUG] 🔑 API Key length: {_pythonApiKey?.Length ?? 0}");
+
                 var response = await _httpClient.SendAsync(pythonRequest);
-                if (!response.IsSuccessStatusCode) 
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[DEBUG] ❌ Erro da Python API - Status: {response.StatusCode}");
+                    Console.WriteLine($"[DEBUG] ❌ Corpo da resposta: {errorBody}");
+                    return StatusCode((int)response.StatusCode, new { sucesso = false, erro = "Erro na API Python", detalhes = errorBody });
+                }
+
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                var resultado = JsonConvert.DeserializeObject<dynamic>(jsonResponse);
+
+                var emocaoDominante = resultado?.analise?.emocao_dominante?.ToString() ?? "";
+                var emocoes = resultado?.analise?.emocoes;
+                var idade = resultado?.analise?.idade?.ToString();
+                var genero = resultado?.analise?.genero?.ToString();
+
+                // Retornar apenas os resultados da análise - o frontend salvará no banco
+                return Ok(new 
+                { 
+                    sucesso = true, 
+                    userId, 
+                    userRole,
+                    emocao = emocaoDominante, 
+                    emocoes = emocoes,
+                    idade = idade,
+                    genero = genero
+                });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { sucesso = false, erro = "Ocorreu um erro interno no servidor." });
+            }
+        }
+
+        [HttpGet("health")]
+        public async Task<IActionResult> VerificarSaude()
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, $"{_pythonApiUrl}/health");
+            req.Headers.Add("X-API-Key", _pythonApiKey);
+            var resp = await _httpClient.SendAsync(req);
+            return resp.IsSuccessStatusCode ? Ok(new { sucesso = true }) : StatusCode(503, new { sucesso = false });
+        }
+
+        [HttpGet("models")]
+        public async Task<IActionResult> ListarModelos()
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, $"{_pythonApiUrl}/models");
+            req.Headers.Add("X-API-Key", _pythonApiKey);
+            var resp = await _httpClient.SendAsync(req);
+            if (resp.IsSuccessStatusCode)
+            {
+                var content = await resp.Content.ReadAsStringAsync();
+                return Ok(JsonConvert.DeserializeObject<dynamic>(content));
+            }
+            return StatusCode((int)resp.StatusCode, new { sucesso = false, erro = "Erro ao buscar modelos" });
+        }
+
+        [HttpPost("analyze-base64")]
+        public async Task<IActionResult> AnalisarFaceBase64([FromBody] AnalyzeRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var userRole = GetCurrentUserRole();
+                var token = GetCurrentToken();
+
+                if (string.IsNullOrEmpty(request.ImageBase64)) return BadRequest(new { sucesso = false, erro = "Nenhuma imagem enviada" });
+
+                var payload = new
+                {
+                    image_base64 = request.ImageBase64,
+                    model = request.Model ?? "Facenet",
+                    detector = request.Detector ?? "opencv",
+                    actions = new[] { "emotion", "age", "gender" }
+                };
+
+                var pythonRequest = new HttpRequestMessage(HttpMethod.Post, $"{_pythonApiUrl}/analyze-base64");
+                pythonRequest.Content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+                pythonRequest.Headers.Add("X-API-Key", _pythonApiKey);
+
+                var response = await _httpClient.SendAsync(pythonRequest);
+                if (!response.IsSuccessStatusCode)
                     return StatusCode((int)response.StatusCode, new { sucesso = false, erro = "Erro na API Python" });
 
                 var jsonResponse = await response.Content.ReadAsStringAsync();
@@ -65,40 +152,23 @@ namespace Sinout.Controllers
                 var idade = resultado?.analise?.idade?.ToString();
                 var genero = resultado?.analise?.genero?.ToString();
 
-                // Buscar nome do paciente do perfil do usuário
-                string patientName = "Paciente"; // Default fallback
-                try
-                {
-                    var userProfileRequest = new HttpRequestMessage(HttpMethod.Get, $"{_crudApiUrl}/api/users/me");
-                    userProfileRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                    
-                    var userProfileResponse = await _httpClient.SendAsync(userProfileRequest);
-                    if (userProfileResponse.IsSuccessStatusCode)
-                    {
-                        var userJson = await userProfileResponse.Content.ReadAsStringAsync();
-                        var userProfile = JsonConvert.DeserializeObject<dynamic>(userJson);
-                        patientName = userProfile?.patientName?.ToString() ?? "Paciente";
-                        Console.WriteLine($"[DEBUG] Nome do paciente carregado do perfil: '{patientName}'");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[DEBUG] Erro ao buscar nome do paciente: {ex.Message}");
-                }
+                // Buscar nome do paciente do perfil do usuário (email do JWT)
+                var emailClaim = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+                string patientName = emailClaim ?? "Paciente"; // Use email do JWT como identificador
 
                 // Salvar histórico vinculado ao cuidador (sem PatientId)
-                var emotionData = new 
-                { 
-                    CaregiverId = userId,
+                var emotionData = new
+                {
+                    CuidadorId = userId,
                     PatientName = patientName,
-                    EmotionsDetected = emocoes, 
+                    EmotionsDetected = emocoes,
                     DominantEmotion = emocaoDominante,
+                    Age = idade,
+                    Gender = genero,
                     Timestamp = DateTime.UtcNow
                 };
 
-                Console.WriteLine($"[DEBUG] Enviando para CRUD API: {JsonConvert.SerializeObject(emotionData)}");
-
-                var crudRequest = new HttpRequestMessage(HttpMethod.Post, $"{_crudApiUrl}/api/history/caregiver-emotion");
+                var crudRequest = new HttpRequestMessage(HttpMethod.Post, $"{_crudApiUrl}/api/history/cuidador-emotion");
                 crudRequest.Content = new StringContent(JsonConvert.SerializeObject(emotionData), Encoding.UTF8, "application/json");
                 crudRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -112,20 +182,14 @@ namespace Sinout.Controllers
                     var crudResult = JsonConvert.DeserializeObject<dynamic>(crudJson);
                     mensagem = crudResult?.suggestedMessage?.ToString();
                     salvoNoHistorico = true;
-                    Console.WriteLine($"[DEBUG] ✅ Histórico salvo com sucesso! Mensagem: {mensagem ?? "NENHUMA"}");
-                }
-                else
-                {
-                    var errorContent = await crudResponse.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[DEBUG] ❌ Erro ao salvar histórico: Status={crudResponse.StatusCode}, Body={errorContent}");
                 }
 
-                return Ok(new 
-                { 
-                    sucesso = true, 
-                    userId, 
+                return Ok(new
+                {
+                    sucesso = true,
+                    userId,
                     userRole,
-                    emocao = emocaoDominante, 
+                    emocao = emocaoDominante,
                     emocoes = emocoes,
                     idade = idade,
                     genero = genero,
@@ -133,19 +197,10 @@ namespace Sinout.Controllers
                     salvo_no_historico = salvoNoHistorico
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { sucesso = false, erro = ex.Message, stack = ex.StackTrace });
+                return StatusCode(500, new { sucesso = false, erro = "Ocorreu um erro interno no servidor." });
             }
-        }
-
-        [HttpGet("health")]
-        public async Task<IActionResult> VerificarSaude()
-        {
-            var req = new HttpRequestMessage(HttpMethod.Get, $"{_pythonApiUrl}/health");
-            req.Headers.Add("X-API-Key", _pythonApiKey);
-            var resp = await _httpClient.SendAsync(req);
-            return resp.IsSuccessStatusCode ? Ok(new { sucesso = true }) : StatusCode(503, new { sucesso = false });
         }
 
         private int GetCurrentUserId()
