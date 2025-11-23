@@ -34,13 +34,14 @@ namespace Sinout.Controllers
         [HttpPost("analyze")]
         public async Task<IActionResult> AnalisarFace([FromForm] IFormFile file, [FromForm] string? model = "Facenet", [FromForm] string? detector = "opencv")
         {
+            Console.WriteLine($"[DEBUG] 📥 Recebida requisição /analyze. File: {file?.FileName}, Size: {file?.Length}");
             try
             {
                 var userId = GetCurrentUserId();
                 var userRole = GetCurrentUserRole();
                 var token = GetCurrentToken();
 
-                if (file == null || file.Length == 0) return BadRequest(new { sucesso = false, erro = "Nenhuma imagem enviada" });
+                if (file == null || file.Length == 0) return BadRequest(new { sucesso = false, message = "Nenhuma imagem enviada" });
 
                 // Análise na API Python
                 using var content = new MultipartFormDataContent();
@@ -54,13 +55,15 @@ namespace Sinout.Controllers
                 pythonRequest.Content = content;
                 pythonRequest.Headers.Add("X-API-Key", _pythonApiKey);
 
+                Console.WriteLine($"[DEBUG] 🚀 Enviando para Python API: {_pythonApiUrl}/analyze");
                 var response = await _httpClient.SendAsync(pythonRequest);
+                
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
                     Console.WriteLine($"[DEBUG] ❌ Erro da Python API - Status: {response.StatusCode}");
                     Console.WriteLine($"[DEBUG] ❌ Corpo da resposta: {errorBody}");
-                    return StatusCode((int)response.StatusCode, new { sucesso = false, erro = "Erro na API Python", detalhes = errorBody });
+                    return StatusCode((int)response.StatusCode, new { sucesso = false, message = "Erro na API Python", detalhes = errorBody });
                 }
 
                 var jsonResponse = await response.Content.ReadAsStringAsync();
@@ -82,9 +85,11 @@ namespace Sinout.Controllers
                     genero = genero
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(500, new { sucesso = false, erro = "Ocorreu um erro interno no servidor." });
+                Console.WriteLine($"[DEBUG] 💥 Exceção no Controller: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                return StatusCode(500, new { sucesso = false, message = "Ocorreu um erro interno no servidor.", detalhes = ex.Message, stackTrace = ex.StackTrace });
             }
         }
 
@@ -191,13 +196,13 @@ namespace Sinout.Controllers
                     salvo_no_historico = salvoNoHistorico
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(500, new { sucesso = false, erro = "Ocorreu um erro interno no servidor." });
+                return StatusCode(500, new { sucesso = false, erro = "Ocorreu um erro interno no servidor.", detalhes = ex.Message, stackTrace = ex.StackTrace });
             }
         }
 
-        private int GetCurrentUserId()
+        private string GetCurrentUserId()
         {
             
             var allClaims = User.Claims.Select(c => $"{c.Type}: {c.Value}").ToList();
@@ -215,10 +220,7 @@ namespace Sinout.Controllers
             if (string.IsNullOrWhiteSpace(userIdClaim.Value))
                 throw new UnauthorizedAccessException("Token JWT inválido");
             
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-                throw new UnauthorizedAccessException($"Token JWT inválido");
-            
-            return userId;
+            return userIdClaim.Value;
         }
         
         private string? GetCurrentUserRole() => User.FindFirst(ClaimTypes.Role)?.Value;
