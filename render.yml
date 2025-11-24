@@ -1,0 +1,26 @@
+services:
+  # Serviço 1: API C# (.NET)
+  - type: web
+    name: sinout-api-csharp
+    env: docker
+    context: C#/Sinout
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: ASPNETCORE_URLS
+        value: http://+:80
+      
+    healthCheckPath: /health 
+    
+  # Serviço 2: API Python (Reconhecimento)
+  - type: web
+    name: sinout-api-python
+    env: docker
+    context: sinout-reconhecimento
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: DEEPFACE_HOME
+        value: /app/.deepface

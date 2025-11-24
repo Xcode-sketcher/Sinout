@@ -450,22 +450,6 @@ def erro_interno(e):
     }), 500
 
 if __name__ == '__main__':
-    print("="*60)
-    print("🚀 API DeepFace Flask - Modo Interno")
-    print("="*60)
-    print("✅ Servidor iniciando...")
-    print("📍 URL: http://localhost:5000")
-    print("📚 Endpoints disponíveis:")
-    print("   GET  /           - Informações da API")
-    print("   GET  /health     - Health check")
-    print("   GET  /models     - Lista modelos")
-    print("   POST /analyze    - Analisa imagem (multipart)")
-    print("   POST /analyze-base64 - Analisa imagem (base64)")
-    print("   POST /analyze-multiple - Múltiplas faces")
-    print("="*60)
-    print("\n⚠️  Esta API deve rodar APENAS internamente!")
-    print("   Para produção, use: flask run --host=127.0.0.1")
-    print("\n")
-
-    # Rodar apenas em localhost (interno)
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    
+    app.run(host='0.0.0.0', port=5000, debug=False) 
+    
