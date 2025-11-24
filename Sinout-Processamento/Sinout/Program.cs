@@ -124,11 +124,11 @@ app.MapGet("/health", async (IHttpClientFactory httpFactory, IConfiguration conf
         if (resp.IsSuccessStatusCode)
             return Results.Ok(new { status = "healthy", python = true });
 
-        return Results.StatusCode(503, new { status = "degraded", python = false, code = (int)resp.StatusCode });
+        return Results.Json(new { status = "degraded", python = false, code = (int)resp.StatusCode }, statusCode: 503);
     }
     catch (Exception ex)
     {
-        return Results.StatusCode(503, new { status = "unhealthy", error = ex.Message });
+        return Results.Json(new { status = "unhealthy", error = ex.Message }, statusCode: 503);
     }
 });
 
