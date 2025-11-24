@@ -3,21 +3,20 @@ services:
   - type: web
     name: sinout-api-csharp
     env: docker
-    context: C#/Sinout
-    dockerfilePath: ./Dockerfile
+    rootDir: C#/Sinout
+    dockerfilePath: Dockerfile
     plan: free
     envVars:
       - key: ASPNETCORE_URLS
         value: http://+:80
-      
-    healthCheckPath: /health 
-    
+    healthCheckPath: /health
+
   # Serviço 2: API Python (Reconhecimento)
   - type: web
     name: sinout-api-python
     env: docker
-    context: sinout-reconhecimento
-    dockerfilePath: ./Dockerfile
+    rootDir: sinout-reconhecimento
+    dockerfilePath: Dockerfile
     plan: free
     envVars:
       - key: PORT
