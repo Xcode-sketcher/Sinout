@@ -15,7 +15,7 @@ services:
   - type: web
     name: sinout-api-python
     env: docker
-    rootDir: sinout-reconhecimento
+    rootDir: Sinout-Reconhecimento
     dockerfilePath: Dockerfile
     plan: free
     envVars:
