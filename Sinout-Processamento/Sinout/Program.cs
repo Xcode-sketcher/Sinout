@@ -108,5 +108,29 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.MapGet("/health", async (IHttpClientFactory httpFactory, IConfiguration config) =>
+{
+    var pythonUrl = config["PythonApiSettings:BaseUrl"] ?? "http://localhost:5000";
+    var apiKey = config["PythonApiSettings:ApiKey"] ?? string.Empty;
+
+    try
+    {
+        var client = httpFactory.CreateClient();
+        var url = pythonUrl.TrimEnd('/') + "/health";
+        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+        if (!string.IsNullOrEmpty(apiKey)) req.Headers.Add("X-API-Key", apiKey);
+
+        var resp = await client.SendAsync(req);
+        if (resp.IsSuccessStatusCode)
+            return Results.Ok(new { status = "healthy", python = true });
+
+        return Results.StatusCode(503, new { status = "degraded", python = false, code = (int)resp.StatusCode });
+    }
+    catch (Exception ex)
+    {
+        return Results.StatusCode(503, new { status = "unhealthy", error = ex.Message });
+    }
+});
+
 app.Run();
 
