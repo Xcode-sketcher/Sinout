@@ -9,6 +9,10 @@ services:
     envVars:
       - key: ASPNETCORE_URLS
         value: http://+:$PORT
+      - key: PythonApiSettings__ApiKey
+        sync: false
+      - key: Jwt__Key
+        sync: false
     healthCheckPath: /health
 
   # Serviço 2: API Python (Reconhecimento)
@@ -19,7 +23,8 @@ services:
     dockerfilePath: Dockerfile
     plan: free
     envVars:
-      - key: PORT
-        value: 5000
       - key: DEEPFACE_HOME
         value: /app/.deepface
+      - key: PYTHON_API_KEY
+        sync: false
+    healthCheckPath: /health

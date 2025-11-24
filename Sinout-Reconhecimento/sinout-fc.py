@@ -50,9 +50,8 @@ def home():
         ]
     })
 @app.route('/health')
-@require_api_key
 def health():
-    """Endpoint para health check"""
+    """Endpoint para health check (sem autenticação)"""
     return jsonify({
         "status": "healthy",
         "timestamp": datetime.now().isoformat()
@@ -274,4 +273,5 @@ def erro_interno(e):
         "detalhes": str(e)
     }), 500
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False) 
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False) 
