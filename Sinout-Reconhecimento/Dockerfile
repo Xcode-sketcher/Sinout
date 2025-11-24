@@ -16,7 +16,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 
-COPY api_deepface_flask.py .
+COPY sinout-fc.py .
 
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -28,4 +28,4 @@ ENV DEEPFACE_HOME=/app/.deepface
 EXPOSE 5000
 
 
-CMD ["python", "api_deepface_flask.py"]
+CMD ["python", "sinout-fc.py"]

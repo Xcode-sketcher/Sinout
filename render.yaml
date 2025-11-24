@@ -1,9 +1,9 @@
 services:
-  # Serviço 1: API C# (.NET)
+  # Serviço 1: API Sinout-Processamento (.NET)
   - type: web
-    name: sinout-api-csharp
+    name: sinout-api-processamento
     env: docker
-    rootDir: C#/Sinout
+    rootDir: Sinout-Processamento/Sinout 
     dockerfilePath: Dockerfile
     plan: free
     envVars:
