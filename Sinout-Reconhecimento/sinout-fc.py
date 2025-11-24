@@ -6,11 +6,15 @@ import numpy as np
 import base64
 from datetime import datetime
 from functools import wraps
+import os
 import traceback
 app = Flask(__name__)
 CORS(app)
 MODELO_PADRAO = "Facenet"
-API_KEY_SECRETA = "PYTHON_API_SECRET_KEY_2024_SINOUT_DEEPFACE_SECURE_ACCESS"
+API_KEY_SECRETA = os.environ.get(
+    'PYTHON_API_KEY',
+    'PYTHON_API_SECRET_KEY_2024_SINOUT_DEEPFACE_SECURE_ACCESS'
+)
 def require_api_key(f):
     """Decorator que valida X-API-Key header antes de processar requisição"""
     @wraps(f)
