@@ -26,5 +26,5 @@ ENV DEEPFACE_HOME=/app/.deepface
 
 EXPOSE 5000
 
-# Comando de execução
-CMD ["python", "sinout-fc.py"]
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "120", "--workers", "1", "--threads", "2", "sinout-fc:app"]

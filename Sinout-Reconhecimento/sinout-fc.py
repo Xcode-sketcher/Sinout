@@ -8,15 +8,58 @@ from datetime import datetime
 from functools import wraps
 import os
 import traceback
+import logging
+import json
+
 app = Flask(__name__)
 CORS(app)
+
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
+
+def convert_numpy_types(obj):
+    if isinstance(obj, dict):
+        return {key: convert_numpy_types(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_numpy_types(item) for item in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    return obj
+
+app.json.encoder = NumpyEncoder
 MODELO_PADRAO = "Facenet"
 API_KEY_SECRETA = os.environ.get(
     'PYTHON_API_KEY',
     'PYTHON_API_SECRET_KEY_2024_SINOUT_DEEPFACE_SECURE_ACCESS'
 )
+
+# Definir ambiente da aplicação: `development` ou `production`
+APP_ENV = os.environ.get('APP_ENV', os.environ.get('FLASK_ENV', 'production'))
+
+# Configurar logger: em `development`
+if APP_ENV.lower() == 'development':
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
+else:
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger('Sinout-Reconhecimento')
 def require_api_key(f):
-    """Decorator que valida X-API-Key header antes de processar requisição"""
+    """Decorator que valida o header X-API-Key antes de processar a requisição.
+
+    Em caso de API Key não fornecida, retorna 401. Em caso inválido, retorna 403.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         api_key = request.headers.get('X-API-Key')
@@ -27,6 +70,7 @@ def require_api_key(f):
                 "mensagem": "Envie o header X-API-Key na requisição"
             }), 401
         if api_key != API_KEY_SECRETA:
+            logger.warning('Attempt to access without valid API key')
             return jsonify({
                 "sucesso": False,
                 "erro": "API Key inválida",
@@ -59,7 +103,10 @@ def health():
 @app.route('/models', methods=['GET'])
 @require_api_key
 def listar_modelos():
-    """Lista os modelos disponíveis"""
+    """Lista os modelos disponíveis para análise facial.
+
+    Retorna um JSON com os modelos e o modelo padrão.
+    """
     return jsonify({
         "modelos_disponiveis": [
             {"nome": "Facenet", "precisao": "97.4%", "velocidade": "rápido", "recomendado": True},
@@ -114,6 +161,9 @@ def analisar_imagem():
         )
         if isinstance(resultado, list):
             resultado = resultado[0]
+        
+        resultado = convert_numpy_types(resultado)
+        
         resposta = {
             "sucesso": True,
             "timestamp": datetime.now().isoformat(),
@@ -130,11 +180,19 @@ def analisar_imagem():
         }
         return jsonify(resposta), 200
     except Exception as e:
+        # Registrar exceção internamente, sem expor detalhes em produção
+        logger.exception('Erro ao processar /analyze')
+        if APP_ENV.lower() == 'development':
+            return jsonify({
+                "sucesso": False,
+                "erro": str(e),
+                "tipo_erro": type(e).__name__,
+                "traceback": traceback.format_exc()
+            }), 500
+        # Em produção retornamos uma mensagem genérica
         return jsonify({
             "sucesso": False,
-            "erro": str(e),
-            "tipo_erro": type(e).__name__,
-            "traceback": traceback.format_exc()
+            "erro": "Erro interno ao processar a imagem"
         }), 500
 @app.route('/analyze-base64', methods=['POST'])
 @require_api_key
@@ -177,6 +235,9 @@ def analisar_base64():
         )
         if isinstance(resultado, list):
             resultado = resultado[0]
+        
+        resultado = convert_numpy_types(resultado)
+        
         resposta = {
             "sucesso": True,
             "timestamp": datetime.now().isoformat(),
@@ -193,11 +254,17 @@ def analisar_base64():
         }
         return jsonify(resposta), 200
     except Exception as e:
+        logger.exception('Erro ao processar /analyze-base64')
+        if APP_ENV.lower() == 'development':
+            return jsonify({
+                "sucesso": False,
+                "erro": str(e),
+                "tipo_erro": type(e).__name__,
+                "traceback": traceback.format_exc()
+            }), 500
         return jsonify({
             "sucesso": False,
-            "erro": str(e),
-            "tipo_erro": type(e).__name__,
-            "traceback": traceback.format_exc()
+            "erro": "Erro interno ao processar imagem base64"
         }), 500
 @app.route('/analyze-multiple', methods=['POST'])
 def analisar_multiplas():
@@ -253,10 +320,16 @@ def analisar_multiplas():
             "faces": resultados
         }), 200
     except Exception as e:
+        logger.exception('Erro ao processar /analyze-multiple')
+        if APP_ENV.lower() == 'development':
+            return jsonify({
+                "sucesso": False,
+                "erro": str(e),
+                "traceback": traceback.format_exc()
+            }), 500
         return jsonify({
             "sucesso": False,
-            "erro": str(e),
-            "traceback": traceback.format_exc()
+            "erro": "Erro interno ao processar múltiplas faces"
         }), 500
 @app.errorhandler(404)
 def nao_encontrado(e):
@@ -267,10 +340,17 @@ def nao_encontrado(e):
     }), 404
 @app.errorhandler(500)
 def erro_interno(e):
+    # Gerência central de erros: registra internamente e evita retorno de detalhes em produção
+    logger.exception('Erro interno exception handler')
+    if APP_ENV.lower() == 'development':
+        return jsonify({
+            "sucesso": False,
+            "erro": "Erro interno do servidor",
+            "detalhes": str(e)
+        }), 500
     return jsonify({
         "sucesso": False,
-        "erro": "Erro interno do servidor",
-        "detalhes": str(e)
+        "erro": "Erro interno do servidor"
     }), 500
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

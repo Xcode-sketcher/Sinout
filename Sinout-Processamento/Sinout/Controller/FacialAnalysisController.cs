@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Hosting;
 using Sinout.Model;
 using System.Security.Claims;
 
@@ -12,6 +13,8 @@ namespace Sinout.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    // Controlador responsável por orquestrar chamadas de análise facial
+    // Recebe imagens do frontend, chama a API Python e retorna o resultado
     public class FacialAnalysisController : ControllerBase
     {
         private readonly HttpClient _httpClient;
@@ -19,12 +22,16 @@ namespace Sinout.Controllers
         private readonly string _pythonApiUrl;
         private readonly string _pythonApiKey;
         private readonly string _crudApiUrl;
+        private readonly IWebHostEnvironment _env;
+        private readonly ILogger<FacialAnalysisController> _logger;
 
-        public FacialAnalysisController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public FacialAnalysisController(IHttpClientFactory httpClientFactory, IConfiguration configuration, IWebHostEnvironment env, ILogger<FacialAnalysisController> logger)
         {
             _httpClient = httpClientFactory.CreateClient();
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
             _configuration = configuration;
+            _env = env;
+            _logger = logger;
             
             _pythonApiUrl = _configuration["PythonApiSettings:BaseUrl"] ?? "http://localhost:5000";
             _pythonApiKey = _configuration["PythonApiSettings:ApiKey"] ?? "";
@@ -34,7 +41,6 @@ namespace Sinout.Controllers
         [HttpPost("analyze")]
         public async Task<IActionResult> AnalisarFace([FromForm] IFormFile file, [FromForm] string? model = "Facenet", [FromForm] string? detector = "opencv")
         {
-            Console.WriteLine($"[DEBUG] 📥 Recebida requisição /analyze. File: {file?.FileName}, Size: {file?.Length}");
             try
             {
                 var userId = GetCurrentUserId();
@@ -55,14 +61,11 @@ namespace Sinout.Controllers
                 pythonRequest.Content = content;
                 pythonRequest.Headers.Add("X-API-Key", _pythonApiKey);
 
-                Console.WriteLine($"[DEBUG] 🚀 Enviando para Python API: {_pythonApiUrl}/analyze");
                 var response = await _httpClient.SendAsync(pythonRequest);
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[DEBUG] ❌ Erro da Python API - Status: {response.StatusCode}");
-                    Console.WriteLine($"[DEBUG] ❌ Corpo da resposta: {errorBody}");
                     return StatusCode((int)response.StatusCode, new { sucesso = false, message = "Erro na API Python", detalhes = errorBody });
                 }
 
@@ -87,9 +90,13 @@ namespace Sinout.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[DEBUG] 💥 Exceção no Controller: {ex.Message}");
-                Console.WriteLine(ex.StackTrace);
-                return StatusCode(500, new { sucesso = false, message = "Ocorreu um erro interno no servidor.", detalhes = ex.Message, stackTrace = ex.StackTrace });
+                // Registrar o erro no logger do aplicativo (sem expor stack trace em produção)
+                _logger.LogError(ex, "Erro ao processar análise facial (analyze)");
+                if (_env.IsDevelopment())
+                {
+                    return StatusCode(500, new { sucesso = false, message = "Ocorreu um erro interno no servidor.", detalhes = ex.Message, stackTrace = ex.StackTrace });
+                }
+                return StatusCode(500, new { sucesso = false, message = "Ocorreu um erro interno no servidor." });
             }
         }
 
@@ -153,7 +160,7 @@ namespace Sinout.Controllers
 
                 
                 var emailClaim = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
-                string patientName = emailClaim ?? "Paciente"; // Use email do JWT como identificador
+                string patientName = emailClaim ?? "Paciente";
 
                 
                 var emotionData = new
@@ -198,7 +205,12 @@ namespace Sinout.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { sucesso = false, erro = "Ocorreu um erro interno no servidor.", detalhes = ex.Message, stackTrace = ex.StackTrace });
+                _logger.LogError(ex, "Erro ao processar análise base64 (analyze-base64)");
+                if (_env.IsDevelopment())
+                {
+                    return StatusCode(500, new { sucesso = false, erro = "Ocorreu um erro interno no servidor.", detalhes = ex.Message, stackTrace = ex.StackTrace });
+                }
+                return StatusCode(500, new { sucesso = false, erro = "Ocorreu um erro interno no servidor." });
             }
         }
 

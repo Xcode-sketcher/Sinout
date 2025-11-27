@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+
+// Program.cs: ponto de entrada e configuração do servidor web.
+
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -66,7 +69,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.SetIsOriginAllowed(origin => origin.StartsWith("http://localhost"))
+        policy.SetIsOriginAllowed(origin => 
+                origin.StartsWith("http://localhost") || 
+                origin.Contains("vercel.app") || 
+                origin.Contains("netlify.app") ||
+                origin.Contains("onrender.com") ||
+                origin.Contains("azurecontainerapps.io") ||
+                origin.Contains("azurestaticapps.net"))
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -96,9 +105,14 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseCors("AllowAll");
 
+// Middleware simples para logar requisições em ambiente de desenvolvimento.
+// Em produção, manter logs limpos e usar o sistema de logging configurado.
 app.Use(async (context, next) =>
 {
-    Console.WriteLine($"[Request] {context.Request.Method} {context.Request.Path}");
+    if (app.Environment.IsDevelopment())
+    {
+        app.Logger.LogInformation("[Request] {method} {path}", context.Request.Method, context.Request.Path);
+    }
     await next();
 });
 
